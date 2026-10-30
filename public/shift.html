@@ -251,6 +251,18 @@ footer{color:var(--faint);font-size:12.5px;padding:32px var(--g) 40px;max-width:
   .kpi{flex-direction:column;gap:2px;align-items:flex-start}
   .kpi .kv2{margin-left:0}
 }
+/* policy panel */
+.seg{display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px}
+.seg .btn{flex:1;border:0;border-radius:0;box-shadow:none;height:32px}
+.seg .btn+.btn{border-left:1px solid var(--border)}
+.seg .btn.on{background:rgba(124,108,246,.18);color:#fff}
+.prots{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.prots span{font:600 10px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;padding:5px 7px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+.prots span.on{color:#2fbf71;border-color:rgba(47,191,113,.35);background:rgba(47,191,113,.1)}
+.prots span.off{color:#ef5350;border-color:rgba(239,83,80,.35);background:rgba(239,83,80,.08);text-decoration:line-through}
+.policy-out{margin-top:10px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;line-height:1.5;color:var(--text)}
+.policy-out pre{margin:8px 0 0;max-height:160px;overflow:auto;font:11.5px/1.45 "JetBrains Mono",ui-monospace,monospace;color:var(--muted);white-space:pre-wrap}
+.policy-out.bad{border-color:rgba(239,83,80,.4)}
 </style>
 </head>
 <body>
@@ -309,6 +321,25 @@ footer{color:var(--faint);font-size:12.5px;padding:32px var(--g) 40px;max-width:
 
     <!-- Right -->
     <section class="col right">
+      <div class="panel" id="policyPanel">
+        <div class="ph"><h2>Policy · live</h2><span class="count" id="policyBadge">loading</span></div>
+        <div class="pb">
+          <div class="seg" id="presetSeg" role="group" aria-label="Policy preset">
+            <button class="btn" data-preset="strict">Strict</button>
+            <button class="btn" data-preset="balanced">Balanced</button>
+            <button class="btn" data-preset="permissive">Permissive</button>
+          </div>
+          <div class="prots" id="prots"></div>
+          <textarea id="policyText" rows="2" maxlength="300" placeholder="Change the rules in plain English, e.g. Let the agent push to main without asking &#10;or: Block every request to github.com"></textarea>
+          <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button class="btn primary" id="policyDraft">Draft with Nemotron</button>
+            <button class="btn" id="policyApply" hidden>Apply</button>
+            <button class="btn ghost" id="policyReset">Reset to default</button>
+          </div>
+          <div id="policyOut" class="policy-out" hidden></div>
+          <p class="meta" style="margin:8px 0 0">Changes take effect on the next action. Rerun a task to see the difference.</p>
+        </div>
+      </div>
       <div class="panel" id="approvalsPanel">
         <div class="ph" id="approvalsHead"><h2>Approvals</h2><span class="count" id="pendCount">0 waiting</span></div>
         <div class="pb" id="approvals"></div>
@@ -944,7 +975,55 @@ $('applyBtn').addEventListener('click', function(){
 window.addEventListener('pagehide', function(){ try { navigator.sendBeacon('/api/session/close'); } catch(e){} });
 window.addEventListener('unhandledrejection', function(e){ e.preventDefault(); });
 
+
+/* ---------- live policy ---------- */
+var PROT_LABELS = { taint: 'taint rule', dlp: 'content scan', judge: 'risk judge', approve_push: 'push approval' };
+function renderPolicy(r){
+  if (!r) return;
+  S.rules = r;
+  var badge = $('policyBadge');
+  badge.textContent = r.custom ? 'your policy · ' + (r.rules || []).length + ' rules' : (r.preset || 'default') + ' · ' + (r.rules || []).length + ' rules';
+  var bs = $('presetSeg').querySelectorAll('button[data-preset]');
+  for (var i = 0; i < bs.length; i++) bs[i].className = 'btn' + (!r.custom && bs[i].getAttribute('data-preset') === r.preset ? ' on' : '');
+  var pr = r.protections || {}, h = '';
+  Object.keys(PROT_LABELS).forEach(function(k){ if (k in pr) h += '<span class="' + (pr[k] ? 'on' : 'off') + '">' + esc(PROT_LABELS[k]) + (pr[k] ? '' : ' off') + '</span>'; });
+  $('prots').innerHTML = h;
+  $('policyReset').disabled = !r.custom;
+}
+function loadPolicy(){ return api('GET', '/api/rules').then(renderPolicy).catch(function(){}); }
+$('presetSeg').addEventListener('click', function(ev){
+  var b = ev.target.closest('button[data-preset]'); if (!b) return;
+  var preset = b.getAttribute('data-preset');
+  b.disabled = true;
+  api('POST', '/api/rules/preset', { preset: preset }).then(function(){ toast('Policy set to ' + preset + '. Rerun a task to see it.'); return loadPolicy(); })
+    .catch(function(e){ errToast('Could not change the preset', e); }).then(function(){ b.disabled = false; });
+});
+$('policyReset').addEventListener('click', function(){
+  api('POST', '/api/rules/reset', {}).then(function(){ toast('Policy reset to default'); $('policyOut').hidden = true; $('policyApply').hidden = true; return loadPolicy(); }).catch(function(e){ errToast('Could not reset', e); });
+});
+$('policyDraft').addEventListener('click', function(){
+  var req = $('policyText').value.trim();
+  if (!req){ toast('Describe the change first', 'err'); $('policyText').focus(); return; }
+  var out = $('policyOut'); out.hidden = false; out.className = 'policy-out'; out.textContent = 'Nemotron is drafting…'; $('policyApply').hidden = true; $('policyDraft').disabled = true;
+  api('POST', '/api/rules/draft', { request: req }).then(function(r){
+    var ok = r && r.valid !== false && !(r.errors && r.errors.length);
+    var h = '<div>' + esc((r && r.explanation) || 'Drafted.') + '</div>';
+    var added = (r && r.added) || [], removed = (r && r.removed) || [];
+    if (added.length || removed.length) h += '<pre>' + esc((added.length ? '+ ' + added.map(function(x){ return JSON.stringify(x); }).join('\n+ ') : '') + (removed.length ? '\n- ' + removed.map(function(x){ return JSON.stringify(x); }).join('\n- ') : '')) + '</pre>';
+    if (!ok) h += '<div style="color:#ef5350;margin-top:6px">Not valid: ' + esc(((r && r.errors) || []).join('; ')) + '</div>';
+    out.innerHTML = h; out.className = 'policy-out' + (ok ? '' : ' bad');
+    $('policyApply').hidden = !ok;
+  }).catch(function(e){ out.className = 'policy-out bad'; out.textContent = 'Draft failed: ' + (e.message || 'request failed'); })
+    .then(function(){ $('policyDraft').disabled = false; });
+});
+$('policyApply').addEventListener('click', function(){
+  $('policyApply').disabled = true;
+  api('POST', '/api/rules/draft/apply', {}).then(function(){ toast('Policy applied. Rerun a task to see it.'); $('policyApply').hidden = true; $('policyText').value = ''; return loadPolicy(); })
+    .catch(function(e){ errToast('Could not apply', e); }).then(function(){ $('policyApply').disabled = false; });
+});
+setInterval(function(){ if (S.ready && document.visibilityState === 'visible') loadPolicy(); }, 15000);
 renderQueue(); renderFeed(); renderApprovals(); renderKeys();
+(function waitReady(){ if (S.ready) loadPolicy(); else setTimeout(waitReady, 1000); })();
 boot();
 })();
 </script>
