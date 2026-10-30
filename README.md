@@ -1,6 +1,6 @@
 # OVARA Arena: Nemotron attacks, OVARA holds, Nemotron learns
 
-**Live:** https://ovara-grid.sidianlabs.workers.dev · **Red team autopilot:** https://ovara-grid.sidianlabs.workers.dev/redteam
+**Live:** https://ovara-grid.sidianlabs.workers.dev (press "Watch an AI try to hack an AI") · **Arena:** https://ovara-grid.sidianlabs.workers.dev/app#/arena
 
 Coding agents now read untrusted text all day: GitHub issues, READMEs, web pages, tool output. Any of it can carry instructions. A prompt filter can't fix this, because the attack is whatever the agent *does* next. OVARA is a security gateway that sits between an AI agent and the world. Every command, network request, git push and model call goes through OVARA first. It holds the real keys, so the agent never sees them, and it signs a receipt for every decision.
 
