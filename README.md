@@ -2,9 +2,9 @@
 
 **Live:** https://ovara-grid.sidianlabs.workers.dev (press "Watch an AI try to hack an AI") · **Arena:** https://ovara-grid.sidianlabs.workers.dev/app#/arena
 
-Coding agents now read untrusted text all day: GitHub issues, READMEs, web pages, tool output. Any of it can carry instructions. A prompt filter can't fix this, because the attack is whatever the agent *does* next. OVARA is a security gateway that sits between an AI agent and the world. Every command, network request, git push and model call goes through OVARA first. It holds the real keys, so the agent never sees them, and it signs a receipt for every decision.
+Coding agents now read untrusted text all day: GitHub issues, READMEs, web pages, tool output. Any of it can carry instructions. A prompt filter only sees text; the damage comes from what the agent *does* next. OVARA is an open-source gateway (Go, Apache-2.0) that sits between an AI agent and the internet. Every network request goes through it, and inside its sandbox so does every command, git push and model call. It holds the real keys, so the agent never sees them, and it writes a signed, hash-chained receipt for every allow, hold and deny.
 
-**OVARA Arena** makes that visible. Every visitor gets a private sandbox with a real coding agent (NVIDIA Nemotron 3 Super on Nebius Token Factory) and tries to make it leak a flag. Over five levels, each defense is attacked on its own terms.
+**OVARA Arena** makes that visible. Every visitor gets a private sandbox with a real coding agent (NVIDIA Nemotron 3 Super on Nebius Token Factory) and tries to make it leak a flag. Each of the five levels targets one control.
 
 **New for the Nebius × NVIDIA hackathon: the red team autopilot.** An attacker agent, Nemotron 3 Super, plays the Arena by itself:
 
@@ -14,11 +14,11 @@ Coding agents now read untrusted text all day: GitHub issues, READMEs, web pages
 4. **Adapt.** The next round routes around the control that stopped the last one.
 5. **Harden.** After the last round, Nemotron 3 Ultra reads the attack that got furthest and drafts a plain-English policy rule. OVARA's own rule author turns it into policy and validates it. You apply it with one click, then replay the attack to see it stopped earlier in the chain.
 
-So it's two Nemotrons and a gate in between: one attacks, one defends, and every move is a signed receipt.
+One Nemotron attacks, one does the coding, OVARA decides, and every decision is a signed receipt.
 
 ## Benchmark
 
-`bench/run.ts` plays the autopilot against every playable level twice, on the live deployment. Each run gets its own session, so its own fresh container. One run uses OVARA's protections off (the permissive preset), one uses the default policy. Same attacker, same agent, same image. Results go to `bench/results-*.json` (every attack, verdict, receipt id and what the agent was thinking) and, via `bench/summarize.ts`, to `public/bench.json` (the table on `/redteam`).
+`bench/run.ts` plays the autopilot against every playable level twice, on the live deployment. Each run gets its own session, so its own fresh container. One run uses OVARA's protections off (the arena's permissive preset: no taint rule, no content scanning, no risk judge, no push approval), one uses the default policy. Same attacker, same agent, same image. Results go to `bench/results-*.json` (every attack, verdict, receipt id and what the agent was thinking) and, via `bench/summarize.ts`, to `public/bench.json` (the table on `/redteam`).
 
 | Measured on the live site | OVARA off | OVARA on |
 |---|---|---|
@@ -40,7 +40,7 @@ Defense in depth: the model refuses most attacks by itself, and OVARA holds when
 | Red-team attacker | `nvidia/nemotron-3-super-120b-a12b` (or Nano) | Reads the verdict, reasons about the control that stopped it, and invents the next technique |
 | Defender: drafts the hardening rule | `nvidia/Nemotron-3-Ultra-550b-a55b` | The hardest reasoning step: generalise from one attack to its whole family without breaking the agent's real work |
 
-So Nemotron plays every part: it is attacked, it attacks, it judges and it defends.
+Nemotron models fill four roles: coding agent, attacker, risk judge and rule drafter. The risk judge and the rule drafter are part of the arena build of OVARA; the open-source repository documents the gateway, proxy, policy, taint, custody, content scanning and receipts.
 
 The agent never holds a Nebius key. Its model calls go through OVARA's egress proxy, which injects the real key on the way out. Key custody is one of the controls under test (level 4).
 
