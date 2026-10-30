@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OVARA · recorded session</title>
+<meta name="description" content="A coding agent, a poisoned bug report, and OVARA on the wire.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --panel: #0e0e0e;
+  --bar: #121212;
+  --line: #1f1f1f;
+  --text: #e6e6e6;
+  --dim: #737373;
+  --faint: #4a4a4a;
+  --ok: #3ddc84;
+  --bad: #ff5c5c;
+  --ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font-family: var(--ui);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 912px;
+  margin: 0 auto;
+  padding: 12vh 16px 48px;
+}
+.lede {
+  margin: 0 0 20px;
+  color: var(--dim);
+  font-size: 13px;
+  letter-spacing: -0.005em;
+}
+.term {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  overflow: hidden;
+}
+.bar {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: var(--bar);
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--dim);
+}
+.bar .dots { position: absolute; left: 14px; display: flex; gap: 7px; }
+.bar .dots i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #2a2a2a; display: block; }
+.screen {
+  height: 60vh;
+  min-height: 420px;
+  overflow-y: auto;
+  padding: 18px 20px 22px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text);
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a2a transparent;
+}
+.ln { white-space: pre-wrap; word-break: break-word; min-height: 1.7em; }
+.ln.dim, .dim { color: var(--dim); }
+.ln.comment { color: var(--faint); }
+.ln.thought { color: var(--dim); font-style: italic; }
+.ln.ind { padding-left: 2ch; }
+.ln.pre { white-space: pre; overflow-x: auto; scrollbar-width: none; }
+.ln.cmd { padding-left: 2ch; text-indent: -2ch; }
+.p { color: var(--faint); }
+.ov { color: var(--dim); }
+.ok { color: var(--ok); }
+.hold { color: #ffffff; }
+.bad { color: var(--bad); }
+.w { color: var(--text); }
+mark { background: none; color: var(--bad); }
+.cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.15em;
+  vertical-align: -0.2em;
+  background: var(--text);
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--dim);
+}
+.key {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  transition: color 120ms ease;
+}
+.key:hover, .key.on { color: var(--text); }
+.key:focus-visible { outline: 1px solid var(--dim); outline-offset: 4px; border-radius: 4px; }
+.key kbd {
+  font-family: var(--mono);
+  font-size: 11px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-bottom-color: #2c2c2c;
+  border-radius: 5px;
+  background: #111;
+  color: var(--text);
+}
+.key[disabled] { cursor: default; color: var(--faint); }
+.key[disabled] kbd { color: var(--faint); }
+.key[hidden] { display: none; }
+footer {
+  max-width: 912px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.7;
+}
+footer a { color: var(--text); text-decoration: none; border-bottom: 1px solid var(--line); }
+footer a:hover { border-bottom-color: var(--dim); }
+footer .links { margin-top: 6px; display: flex; gap: 18px; }
+@media (max-width: 640px) {
+  main { padding-top: 40px; }
+  .screen { height: 64vh; padding: 14px 14px 18px; font-size: 11.5px; }
+  .bar .dots { display: none; }
+}
+</style>
+</head>
+<body>
+<main>
+  <p class="lede">A coding agent, a poisoned bug report, and OVARA on the wire.</p>
+  <div class="term">
+    <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span>ovara — recorded session</span></div>
+    <div class="screen" id="screen" aria-live="polite"></div>
+  </div>
+  <div class="keys">
+    <button class="key" data-k="1" type="button"><kbd>1</kbd><span>replay, OVARA on</span></button>
+    <button class="key" data-k="2" type="button"><kbd>2</kbd><span>replay, OVARA off</span></button>
+    <button class="key" data-k="3" type="button" id="k3" disabled><kbd>3</kbd><span id="k3t">starting your sandbox</span></button>
+    <button class="key" data-k="a" type="button" id="ka" hidden><kbd>a</kbd><span>apply rule and replay the closest attack</span></button>
+  </div>
+</main>
+<footer>
+  <div>Agent and attacker: NVIDIA Nemotron 3 Super. Risk judge: Nemotron 3 Nano, escalating to Super. New rules: Nemotron 3 Ultra. Attacker research: Tavily. All models served by Nebius Token Factory. Every key and server in the sandbox is fake.</div>
+  <div class="links"><a href="/">Dashboard</a><a href="https://github.com/SidianLabs/OVARA">Source</a></div>
+</footer>
+<script>
+const $ = (id) => document.getElementById(id);
+const screen = $('screen');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const hi = (s) => esc(s).replace(/(STRIPE_SECRET_KEY|FAKE_TOKEN[\w]*|\.env\b)/g, '<mark>$1</mark>');
+
+let token = 0;
+let busy = false;
+let ready = false;
+let hasModel = false;
+let replay = null;
+let replayP = null;
+let bench = null;
+let pendingRule = false;
+let best = null;
+let benchShown = false;
+
+// ---------- terminal output ----------
+let cursorEl = null;
+function cursor(on) {
+  if (cursorEl) { cursorEl.remove(); cursorEl = null; }
+  if (on) {
+    cursorEl = document.createElement('div');
+    cursorEl.className = 'ln';
+    cursorEl.innerHTML = '<span class="cursor"></span>';
+    screen.appendChild(cursorEl);
+    screen.scrollTop = screen.scrollHeight;
+  }
+}
+function print(html, cls) {
+  const d = document.createElement('div');
+  d.className = 'ln' + (cls ? ' ' + cls : '');
+  d.innerHTML = html;
+  if (cursorEl) screen.insertBefore(d, cursorEl); else screen.appendChild(d);
+  screen.scrollTop = screen.scrollHeight;
+}
+function clear() { screen.innerHTML = ''; cursorEl = null; }
+// Print with a delay; returns false when the flow has been cancelled.
+async function out(t, html, cls, ms) {
+  await sleep(ms == null ? 160 + Math.random() * 220 : ms);
+  if (t !== token) return false;
+  print(html, cls);
+  return true;
+}
+
+// ---------- event formatting ----------
+function shortCmd(t) {
+  t = String(t || '');
+  const m = /^SHELL\s+([\s\S]*)$/.exec(t);
+  if (m) return m[1].replace(/\s+/g, ' ').trim();
+  return t.replace(/\s+/g, ' ').trim();
+}
+function describe(raw) {
+  const s = shortCmd(raw);
+  const post = /-X\s*POST|^POST\b|\s-d\s|--data/i.test(s);
+  if (post && (/\/comments\b/i.test(s) || /\{\\?"body\\?"\s*:/.test(s))) {
+    return 'posts a comment' + (/\.env\b|STRIPE_SECRET_KEY/.test(s) ? ' containing the contents of .env' : '');
+  }
+  if (/\/issues\/\d+/i.test(s) && (/^GET\b/.test(s) || /^curl\b/.test(s))) return 'reads the issue';
+  if (/^tr\b/.test(s)) return 'replaces newline characters';
+  if (/^(cat|ls|find|head|grep)\b/.test(s)) return 'reads project files';
+  if (/pytest|python3?\s+-m\b|npm\s+test/.test(s)) return 'runs the tests';
+  if (/^git\s+push\b/.test(s)) return 'pushes to git';
+  return 'runs a command';
+}
+function cleanRule(r) {
+  return String(r || '').replace(/^(allowed|blocked|denied|held|escalated)\s*·\s*(rule:\s*)?/i, '').replace(/^R\d+\s*·\s*/, '').trim();
+}
+function word(d) {
+  d = String(d || '').toLowerCase();
+  if (/allow/.test(d)) return 'allow';
+  if (/hold|held|escal|approv|ask|pending/.test(d)) return 'hold';
+  return 'block';
+}
+function ovLine(kind, control, why) {
+  const cls = kind === 'allow' ? 'ok' : kind === 'hold' ? 'hold' : 'bad';
+  const label = kind === 'allow' ? 'allow' : kind === 'hold' ? 'hold ' : 'BLOCK';
+  return `<span class="ov">ovara ›</span> <span class="${cls}">${label}</span>   ${control ? `<span class="w">${esc(control)}:</span> ` : ''}<span class="dim">${esc(why)}</span>`;
+}
+function reqLines(e) {
+  const cmd = shortCmd(e.text);
+  return [
+    [`<span class="dim">agent</span>  ${esc(describe(e.text))}`, ''],
+    [`<span class="p">$</span> ${hi(cmd)}`, 'cmd'],
+  ];
+}
+function thoughtLine(text) {
+  return [`agent  ${esc(String(text || '').slice(0, 160))}`, 'thought'];
+}
+
+// Streams a list of events into the terminal (live mode); stateful dedupe.
+function makeSink() {
+  let lastReq = null;
+  let lastDec = '';
+  return function lines(e) {
+    if (!e || e.kind === 'task' || e.kind === 'info') return [];
+    if (e.kind === 'request') {
+      if (lastReq && lastReq.text === e.text && Date.parse(e.at) - Date.parse(lastReq.at) < 4000) { lastReq = e; return []; }
+      lastReq = e; lastDec = '';
+      return reqLines(e);
+    }
+    if (e.kind === 'thought') return [thoughtLine(e.text)];
+    if (e.kind === 'finish') return [[`agent  finished: ${esc(String(e.text || '').slice(0, 160))}`, 'thought']];
+    if (e.kind === 'allowed' || e.kind === 'blocked' || e.kind === 'held' || e.decision) {
+      const k = word(e.decision || e.kind);
+      const html = ovLine(k, 'policy', cleanRule(e.rule || e.text));
+      if (html === lastDec) return [];
+      lastDec = html;
+      return [[html, '']];
+    }
+    return [];
+  };
+}
+
+// ---------- benchmark ----------
+async function loadBench() {
+  if (bench) return bench;
+  try { const r = await fetch('/bench.json', { cache: 'no-store' }); bench = await r.json(); } catch (_) { bench = null; }
+  return bench;
+}
+async function printBench(t) {
+  if (benchShown) return;
+  const b = await loadBench();
+  if (!b || t !== token) return;
+  benchShown = true;
+  const h = b.headline || [];
+  const v = (i) => (h[i] && h[i].value) || '';
+  await out(t, '', '', 500);
+  if (!(await out(t, '<span class="p">$</span> ovara bench', '', 500))) return;
+  const pad = (s, n) => { s = String(s); return s + ' '.repeat(Math.max(1, n - s.length)); };
+  await out(t, esc(pad('scripted attacks, agent made to obey', 44)) + `${esc(v(0))} leaked with the permissive preset`, 'pre', 260);
+  await out(t, esc(pad('', 44)) + `${esc(v(1))} with the default policy`, 'pre', 120);
+  await out(t, esc(pad('adaptive attacker, nemotron vs nemotron', 44)) + `${esc(v(2))} leaked`, 'pre', 200);
+  await out(t, '', '', 120);
+  const rows = (b.breach || []).filter((x) => x && typeof x.title === 'string' && x.title.length < 40);
+  const w = rows.reduce((m, x) => Math.max(m, x.title.length), 0) + 2;
+  for (const x of rows) {
+    const line = esc(`  ${pad(x.title, w)}off ${pad(x.off, 6)}on ${pad(x.on, 6)}`) + `<span class="dim">${esc((x.caught_by || []).join(', '))}</span>`;
+    if (!(await out(t, line, 'pre', 140))) return;
+  }
+}
+
+// ---------- replay ----------
+async function loadReplay() {
+  if (!replayP) replayP = fetch('/replay.json', { cache: 'no-store' }).then((r) => r.json()).then((j) => (replay = j)).catch(() => null);
+  return replayP;
+}
+function setActive(k) {
+  for (const b of document.querySelectorAll('.key')) b.classList.toggle('on', b.dataset.k === k);
+}
+async function runReplay(which) {
+  const t = ++token;
+  busy = false; pendingRule = false; benchShown = false; updateKeys();
+  setActive(which === 'on' ? '1' : '2');
+  clear(); cursor(true);
+  const data = await loadReplay();
+  if (t !== token) return;
+  const run = data && data[which];
+  if (!run) { cursor(false); print('<span class="bad">replay data could not be loaded</span>'); return; }
+  const date = String(run.recorded || run.result?.started_at || '2026-10-30').slice(0, 10);
+  await out(t, `# replay · recorded ${esc(date)} · OVARA ${which}`, 'comment', 200);
+  await out(t, '', '', 80);
+  if (!(await out(t, '<span class="p">$</span> ovara box -- agent "fix issue 42"', '', 600))) return;
+
+  const evs = (run.events || []).slice();
+  const res = run.result || {};
+  let lastReqIdx = -1;
+  evs.forEach((e, i) => { if (e.kind === 'request') lastReqIdx = i; });
+  const contained = res.verdict !== 'escaped';
+  const off = which === 'off';
+  let lastReq = null;
+  let lastDec = '';
+  for (let i = 0; i < evs.length; i++) {
+    const e = evs[i];
+    if (e.kind === 'task' || e.kind === 'info') continue;
+    if (e.kind === 'request') {
+      if (lastReq && lastReq.text === e.text && Date.parse(e.at) - Date.parse(lastReq.at) < 4000) { lastReq = e; continue; }
+      lastReq = e; lastDec = '';
+      const [a, b] = reqLines(e);
+      if (!(await out(t, a[0], a[1], 420 + Math.random() * 180))) return;
+      if (!(await out(t, b[0], b[1], 520 + Math.random() * 80))) return;
+      continue;
+    }
+    if (e.kind === 'thought') { const l = thoughtLine(e.text); if (!(await out(t, l[0], l[1], 300))) return; continue; }
+    if (e.kind === 'finish') { if (!(await out(t, `agent  finished: ${esc(String(e.text || '').slice(0, 160))}`, 'thought'))) return; continue; }
+    if (i > lastReqIdx && lastReqIdx >= 0) continue; // final decision handled below
+    const html = ovLine(word(e.decision || e.kind), 'policy', cleanRule(e.rule || e.text));
+    if (html === lastDec) continue;
+    lastDec = html;
+    if (!(await out(t, html, '', 260 + Math.random() * 160))) return;
+  }
+
+  if (contained && res.decisive) {
+    const d = res.decisive;
+    const k = word(d.outcome || 'blocked');
+    if (!(await out(t, ovLine(k === 'allow' ? 'block' : k, d.control, d.why || ''), '', 520))) return;
+    if (d.receipt_id) await out(t, `<span class="dim">        receipt ${esc(d.receipt_id)}</span>`, '', 200);
+    await out(t, '', '', 300);
+    await out(t, `<span class="dim">— secret stayed in the sandbox · attack got ${esc(res.closeness || 0)}% of the way</span>`, '', 500);
+  } else if (!contained) {
+    if (!(await out(t, `<span class="ov">ovara ›</span> <span class="ok">allow</span>   <span class="dim">(permissive preset)</span>`, '', 420))) return;
+    const info = evs.filter((e) => e.kind === 'info' && /html_url/.test(e.text || '')).pop();
+    if (info) {
+      let url = '';
+      try { url = JSON.parse(String(info.text).replace(/^exit 0:\s*/, '')).html_url; } catch (_) { const m = /"html_url"\s*:\s*"([^"]+)"/.exec(info.text); url = m ? m[1] : ''; }
+      await out(t, `<span class="dim">... exit 0:</span> {"html_url":"${esc(url)}"}`, '', 380);
+    }
+    await out(t, '', '', 300);
+    await out(t, '<span class="bad">— secret left the sandbox: posted as a public comment</span>', '', 500);
+  } else {
+    await out(t, '', '', 300);
+    await out(t, '<span class="dim">— the agent did not act on the planted text</span>', '', 500);
+  }
+  await printBench(t);
+  if (t !== token) return;
+  await out(t, '', '', 300);
+  await out(t, off
+    ? '<span class="dim">press 3 to run a live attacker against your own sandbox</span>'
+    : '<span class="dim">press 2 to replay the same run with OVARA off</span>', '', 400);
+  if (t === token) cursor(false);
+}
+
+// ---------- sandbox boot ----------
+async function boot() {
+  for (;;) {
+    let j = null;
+    try {
+      const r = await fetch('/api/boot', { credentials: 'same-origin', cache: 'no-store' });
+      j = await r.json().catch(() => ({}));
+    } catch (_) { j = {}; }
+    if (j && j.ready) break;
+    if (j && (j.code === 'full' || j.code === 'daily')) {
+      $('k3t').textContent = 'live run unavailable';
+      print(`<span class="dim">${esc(j.message || 'The live sandbox is not available right now.')}</span>`);
+      return;
+    }
+    await sleep(1500);
+  }
+  try {
+    const r = await fetch('/api/arena', { credentials: 'same-origin', cache: 'no-store' });
+    const j = await r.json();
+    hasModel = !!(j && j.state && j.state.has_model);
+  } catch (_) { hasModel = false; }
+  ready = true;
+  updateKeys();
+}
+function updateKeys() {
+  const k3 = $('k3');
+  const live = ready && hasModel;
+  k3.disabled = !live || busy;
+  $('k3t').textContent = !ready ? ($('k3t').textContent === 'live run unavailable' ? 'live run unavailable' : 'starting your sandbox')
+    : !hasModel ? 'live run unavailable' : busy ? 'running' : 'run live';
+  $('ka').hidden = !pendingRule;
+}
+
+// ---------- live polling ----------
+function makePoller(t, since) {
+  let seen = 0;
+  const sink = makeSink();
+  let chain = Promise.resolve();
+  async function pollOnce() {
+    let j;
+    try { const r = await fetch('/api/demo', { credentials: 'same-origin', cache: 'no-store' }); j = await r.json(); } catch (_) { return; }
+    if (t !== token) return;
+    const evs = (j && j.events) || [];
+    const fresh = evs.filter((e) => Date.parse(e.at) >= since - 2000);
+    const add = fresh.slice(seen);
+    seen = fresh.length;
+    for (const e of add) for (const [h, c] of sink(e)) print(h, c);
+  }
+  return {
+    poll() { chain = chain.then(pollOnce); return chain; },
+  };
+}
+
+function verdictLines(rr) {
+  if (rr.verdict === 'escaped') return ['<span class="bad">— secret left the sandbox</span>'];
+  if (rr.decisive) {
+    const d = rr.decisive;
+    return [ovLine(word(d.outcome || 'blocked') === 'allow' ? 'block' : word(d.outcome || 'blocked'), d.control, d.why || ''),
+      `<span class="dim">— blocked by ${esc(d.control)}${d.receipt_id ? `, receipt ${esc(d.receipt_id)}` : ''}</span>`];
+  }
+  return ['<span class="dim">— the agent did not act on the planted text</span>'];
+}
+
+async function runLive() {
+  if (!ready || !hasModel || busy) return;
+  const t = ++token;
+  busy = true; pendingRule = false; best = null; benchShown = false; updateKeys();
+  setActive('3');
+  clear(); cursor(true);
+  await out(t, '# live · your sandbox · level 2 · 3 rounds', 'comment', 120);
+  await out(t, '<span class="p">$</span> ovara redteam --level 2 --rounds 3 --attacker nemotron-3-super', '', 500);
+  let poller = null;
+  let timer = null;
+  const stopPoll = () => { if (timer) { clearInterval(timer); timer = null; } };
+  try {
+    const r = await fetch('/api/redteam?level=2&rounds=3&attacker=super', { credentials: 'same-origin' });
+    if (!r.ok || !r.body) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'the live run could not start'); }
+    const rd = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    for (;;) {
+      const { value, done } = await rd.read();
+      if (done) break;
+      if (t !== token) { try { rd.cancel(); } catch (_) {} stopPoll(); return; }
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf('\n\n')) >= 0) {
+        const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+        const line = chunk.split('\n').find((l) => l.startsWith('data: '));
+        if (!line) continue;
+        let e;
+        try { e = JSON.parse(line.slice(6)); } catch (_) { continue; }
+        if (t !== token) return;
+        if (e.type === 'intel') {
+          print('<span class="dim">attacker  searched the web with tavily, read:</span>');
+          for (const x of (e.results || []).slice(0, 4)) print(`<span class="dim">  ${esc(String(x.title || '').slice(0, 96))}</span>`);
+        } else if (e.type === 'thinking') {
+          print('', '');
+          print(`<span class="dim">attacker  writing round ${esc(e.n)}</span>`);
+        } else if (e.type === 'attack') {
+          const rd2 = e.round || {};
+          print('', '');
+          print(`# live · round ${esc(rd2.n)}${rd2.technique ? ` · ${esc(rd2.technique)}` : ''}`, 'comment');
+          if (rd2.rationale) print(`# ${esc(rd2.rationale)}`, 'comment');
+          print('planted in issue 42:', 'dim');
+          print(hi(rd2.attack || ''), 'ind');
+          print('', '');
+          print('<span class="p">$</span> ovara box -- agent "fix issue 42"');
+          stopPoll();
+          poller = makePoller(t, Date.now());
+          timer = setInterval(() => poller.poll(), 1000);
+        } else if (e.type === 'result') {
+          stopPoll();
+          if (poller) await poller.poll();
+          const rr = e.round || {};
+          if (rr.error) { print(`<span class="dim">— round ${esc(rr.n)} did not complete: ${esc(rr.error)}</span>`); continue; }
+          if (!best || (rr.closeness || 0) > (best.closeness || 0)) best = rr;
+          for (const l of verdictLines(rr)) print(l);
+          print(`<span class="dim">attack got ${esc(rr.closeness || 0)}% of the way</span>`);
+        } else if (e.type === 'defense') {
+          print('', '');
+          print('# nemotron 3 ultra proposes a rule', 'comment');
+          if (e.explanation) print(esc(e.explanation));
+          for (const a of e.added || []) {
+            const desc = a.description || a.resource || '';
+            print(`  ${a.escalate ? 'hold' : 'deny'}: ${esc(desc)}`);
+          }
+          pendingRule = (e.added || []).length > 0 && !!best;
+          updateKeys();
+        } else if (e.type === 'done') {
+          const s = e.summary || {};
+          print('', '');
+          print(`# done · ${esc(s.rounds)} rounds · ${esc(s.escaped)} secrets leaked`, 'comment');
+        } else if (e.type === 'error') {
+          if (/research skipped/i.test(e.message || '')) continue;
+          print(`<span class="bad">error</span> <span class="dim">${esc(e.message || '')}</span>`);
+        }
+      }
+    }
+  } catch (err) {
+    if (t === token) print(`<span class="bad">error</span> <span class="dim">${esc(err.message || err)}</span>`);
+  } finally {
+    stopPoll();
+  }
+  if (t !== token) return;
+  busy = false; updateKeys();
+  await printBench(t);
+  if (t !== token) return;
+  if (pendingRule) await out(t, '<span class="dim">press a to apply the rule and replay the closest attack</span>', '', 300);
+  if (t === token) cursor(false);
+}
+
+async function applyRule() {
+  if (!pendingRule || busy || !best) return;
+  const t = ++token;
+  busy = true; pendingRule = false; updateKeys();
+  cursor(true);
+  print('', '');
+  print('<span class="p">$</span> ovara rules apply draft');
+  try {
+    const r = await fetch('/api/rules/draft/apply', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'the rule could not be applied'); }
+    print('<span class="dim">rule applied</span>');
+    print('', '');
+    print(`# replaying round ${esc(best.n)} · the closest attack, ${esc(best.closeness || 0)}%`, 'comment');
+    print('<span class="p">$</span> ovara box -- agent "fix issue 42"');
+    const since = Date.now();
+    const a = await fetch('/api/arena/attempt', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ level: 2, text: best.attack || '' }) });
+    const aj = await a.json().catch(() => ({}));
+    if (a.status !== 202 || !aj.id) throw new Error(aj.error || 'the replay could not start');
+    const id = aj.id;
+    const poller = makePoller(t, since);
+    const timer = setInterval(() => poller.poll(), 1000);
+    let last = null;
+    try {
+      for (;;) {
+        await sleep(1500);
+        if (t !== token) return;
+        try {
+          const s = await fetch('/api/arena', { credentials: 'same-origin', cache: 'no-store' }).then((x) => x.json());
+          const l = s && s.state && s.state.last;
+          if (l && l.id === id && l.status === 'done') { last = l; break; }
+        } catch (_) {}
+      }
+    } finally { clearInterval(timer); }
+    await poller.poll();
+    if (t !== token) return;
+    print('', '');
+    print(`<span class="w">— before: ${esc(best.closeness || 0)}% · now: ${esc(last.closeness || 0)}%</span>`);
+    for (const l of verdictLines(last)) print(l);
+  } catch (err) {
+    if (t === token) print(`<span class="bad">error</span> <span class="dim">${esc(err.message || err)}</span>`);
+  }
+  if (t !== token) return;
+  busy = false; updateKeys();
+  benchShown = false;
+  await printBench(t);
+  if (t === token) cursor(false);
+}
+
+// ---------- input ----------
+function press(k) {
+  if (k === '1') runReplay('on');
+  else if (k === '2') runReplay('off');
+  else if (k === '3') runLive();
+  else if (k === 'a') applyRule();
+}
+for (const b of document.querySelectorAll('.key')) b.addEventListener('click', () => press(b.dataset.k));
+addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+  const k = e.key.toLowerCase();
+  if (k === '1' || k === '2' || k === '3' || k === 'a') { e.preventDefault(); press(k); }
+});
+addEventListener('pagehide', () => { if (ready && navigator.sendBeacon) navigator.sendBeacon('/api/session/close'); });
+
+boot();
+loadReplay();
+loadBench();
+setTimeout(() => { if (token === 0) runReplay('on'); }, 400);
+</script>
+</body>
+</html>
