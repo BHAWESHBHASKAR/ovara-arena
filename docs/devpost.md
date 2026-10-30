@@ -1,7 +1,7 @@
 # Devpost submission: OVARA Arena
 
 **Track:** Coding and Agentic Engineering (also entering Best Use of Tavily)
-**Demo:** https://ovara-grid.sidianlabs.workers.dev (opens on a real recorded attack; flip OVARA OFF, then press "Run it live")
+**Demo:** https://ovara-grid.sidianlabs.workers.dev (the OVARA dashboard and arena; the recorded session and live attacker are at /demo)
 **Repo:** https://github.com/BHAWESHBHASKAR/ovara-arena (OVARA core: https://github.com/SidianLabs/OVARA)
 
 ## Tagline

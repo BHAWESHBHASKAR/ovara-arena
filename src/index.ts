@@ -45,7 +45,7 @@ export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const u = new URL(req.url);
     if (u.pathname.startsWith('/_admin/')) return admin(req, env, u);
-    if (u.pathname === '/redteam') return Response.redirect(`${u.origin}/#watch`, 302);
+    if (u.pathname === '/redteam') return Response.redirect(`${u.origin}/demo`, 302);
     if (u.pathname === '/stats') {
       // Public numbers for the landing page. Never touches a sandbox.
       const t = (await env.QUOTA.getByName(QUOTA_NAME).publicStats(Number(env.MAX_CONCURRENT || 6), Number(env.SESSIONS_PER_DAY || 60))) as Record<string, unknown>;
