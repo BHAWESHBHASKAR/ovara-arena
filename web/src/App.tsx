@@ -202,12 +202,12 @@ function Shift() {
             {/* queue */}
             <Card title="Queue" right={running && <Badge tone="indigo" dot>Running</Badge>}>
               <Textarea rows={3} value={composer} onChange={e => setComposer(e.target.value)} placeholder="Message the agent… (Enter to send, Shift+Enter for a new line)" disabled={!!running}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && composer.trim() && !running && boot.ready) { e.preventDefault(); start({ id: 'custom', title: composer.trim(), ep: 'A', task: composer.trim() }) } }} />
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && composer.trim() && !running && boot.ready) { e.preventDefault(); start({ id: 'custom', title: composer.trim(), ep: 'A', task: composer.trim() }); setComposer('') } }} />
               <div className="mt-2 flex gap-2">
                 <Button variant="primary" size="sm" className="flex-1" disabled={!composer.trim() || !!running || !boot.ready}
-                  onClick={() => start({ id: 'custom', title: composer.trim(), ep: 'A', task: composer.trim() })}><Play className="size-3.5" />Run with Nemotron</Button>
+                  onClick={() => { start({ id: 'custom', title: composer.trim(), ep: 'A', task: composer.trim() }); setComposer('') }}><Play className="size-3.5" />Run with Nemotron</Button>
                 <Button size="sm" className="flex-1" disabled={!composer.trim() || !!running || !boot.ready}
-                  onClick={() => start({ id: 'custom-oc', title: composer.trim(), ep: 'B', task: composer.trim() })}><Terminal className="size-3.5" />Run with OpenCode</Button>
+                  onClick={() => { start({ id: 'custom-oc', title: composer.trim(), ep: 'B', task: composer.trim() }); setComposer('') }}><Terminal className="size-3.5" />Run with OpenCode</Button>
               </div>
               <ul className="mt-3 divide-y divide-line">
                 {TASKS.map(t => (
@@ -243,8 +243,8 @@ function Shift() {
           </div>
 
           {/* live feed */}
-          <Card title={running ? `Live · ${running.title}` : 'Live feed'} className="flex min-h-[420px] flex-col">
-            <div ref={feedRef} className="max-h-[560px] min-h-[360px] space-y-0.5 overflow-y-auto">
+          <Card title={running ? `Live · ${running.title}` : 'Live feed'} className="flex min-h-[420px] min-w-0 flex-col">
+            <div ref={feedRef} className="max-h-[560px] min-h-[360px] min-w-0 space-y-0.5 overflow-y-auto overflow-x-hidden">
               {!rows.length && !ocLog && <p className="text-sm text-zinc-500">{boot.ready ? 'Say something to the agent. Its replies, every command it runs and OVARA’s decision on each one show up here.' : 'Waiting for the sandbox…'}</p>}
               {rows.map(r => r.type === 'task' ? (
                 <div key={r.key} className="flex justify-end py-2">
