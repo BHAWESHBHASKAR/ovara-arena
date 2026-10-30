@@ -821,9 +821,16 @@ function renderFeed(){
   rows.forEach(function(r){
     var p = shown[shown.length - 1];
     if (p && p.kind === r.kind && p.text === r.text && (p.dec || '') === (r.dec || '')) return;
+    if (r.kind === 'RUN' && (r.dec === 'allowed' || !r.dec) && PLUMBING.test(r.text || '')){
+      if (p && p.plumb){ p.n++; p.text = 'git internals · ' + p.n + ' commands'; return; }
+      shown.push({ key: r.key, at: r.at, kind: 'RUN', text: 'git internals · 1 command', mono: true, dec: 'allowed', rule: r.rule, plumb: true, n: 1 });
+      return;
+    }
     shown.push(r);
   });
-  var BOILER = /^(Everything else the agent runs|Fetching a URL is routine|Model API)/i;
+  var BOILER = /^(R\d+\s*[·:-]\s*)?(Everything else the agent runs|Fetching a URL is routine|Model API)/i;
+  // git's own plumbing during a push or fetch is noise unless something was held or blocked
+  var PLUMBING = /^git (receive-pack|upload-pack|pack-objects|unpack-objects|rev-list|maintenance|--git-dir=|for-each-ref|cat-file|rev-parse --abbrev-ref)/;
   var html = '';
   shown.forEach(function(r){
     var isNew = !S.seenKeys[r.key + '|' + r.dec];
