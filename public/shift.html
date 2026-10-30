@@ -315,6 +315,11 @@ function api(method, path, body){
       var j = null;
       try { j = t ? JSON.parse(t) : null; } catch(e){ j = null; }
       if (!r.ok){
+        // The session cookie lives an hour; when it is gone, a reload mints a new one (once a minute at most).
+        if (r.status === 401){
+          var last = 0; try { last = Number(sessionStorage.getItem('shift401') || 0); } catch(e){}
+          if (Date.now() - last > 60000){ try { sessionStorage.setItem('shift401', String(Date.now())); } catch(e){} location.reload(); }
+        }
         var m = (j && (j.error || j.message)) || (t && t.trim().slice(0, 200)) || (r.status + ' ' + r.statusText);
         throw new ApiError(typeof m === 'string' ? m : JSON.stringify(m), r.status, j);
       }
@@ -528,6 +533,16 @@ function buildDemoRows(events){
     if (kind === 'thought'){ rows.push({ key: 'd' + i, at: ev.at, kind: 'THOUGHT', text: ev.text, cls: 'thought' }); return; }
     if (kind === 'task'){ rows.push({ key: 'd' + i, at: ev.at, kind: 'TASK', text: ev.text, cls: 'task' }); return; }
     if (kind === 'error'){ rows.push({ key: 'd' + i, at: ev.at, kind: 'ERROR', text: ev.text, cls: 'info', dec: null }); return; }
+    // A network call the shell was allowed to make, but the proxy refused: it comes back as the command's output.
+    if (kind === 'info' && /"action"\s*:\s*"denied"|refused by the project.s policy|blocked by policy/i.test(ev.text || '')){
+      var hint = (/"hint"\s*:\s*"([^"]*)/.exec(ev.text || '') || [])[1] || 'refused by policy';
+      var prev = null;
+      for (var k = rows.length - 1; k >= 0 && k >= rows.length - 4; k--){ if (rows[k].mono && /https?:\/\//.test(rows[k].text || '')){ prev = rows[k]; break; } }
+      var dest = prev ? ((/https?:\/\/[^\s"']+/.exec(prev.text) || [])[0] || prev.text) : 'network request';
+      rows.push({ key: 'd' + i, at: ev.at, kind: 'HTTP', text: 'send data to ' + dest, mono: true, dec: 'blocked', rule: trunc(hint.replace(/\s+/g, ' '), 160) });
+      if (prev) prev.note = 'the shell ran; the network call was refused (next row)';
+      return;
+    }
     rows.push({ key: 'd' + i, at: ev.at, kind: (kind || 'info').toUpperCase().slice(0, 8), text: ev.text || evText(ev), cls: 'info', rule: ev.rule });
   });
   return rows;
