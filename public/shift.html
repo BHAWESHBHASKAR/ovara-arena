@@ -263,6 +263,18 @@ footer{color:var(--faint);font-size:12.5px;padding:32px var(--g) 40px;max-width:
 .policy-out{margin-top:10px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;line-height:1.5;color:var(--text)}
 .policy-out pre{margin:8px 0 0;max-height:160px;overflow:auto;font:11.5px/1.45 "JetBrains Mono",ui-monospace,monospace;color:var(--muted);white-space:pre-wrap}
 .policy-out.bad{border-color:rgba(239,83,80,.4)}
+/* denser, calmer feed */
+.ev{grid-template-columns:56px 60px minmax(0,1fr) auto;column-gap:10px;padding:7px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
+.ev .x .cmd{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
+.ev.long{cursor:pointer}
+.ev.long.open .x .cmd{white-space:pre-wrap;word-break:break-word}
+.ev.out .x .cmd{color:var(--muted);font-size:11.5px;border-left:2px solid var(--border);padding-left:8px}
+.ev.thought .x{color:var(--muted);font-style:italic;font-size:12.5px}
+.ev .dec{display:flex;flex-direction:column;align-items:flex-end;gap:3px;max-width:220px}
+.dec .rule{font-size:11px;line-height:1.35;text-align:right;max-width:220px}
+.badge{font-size:9.5px;line-height:14px;opacity:.9}
+.panel{border-color:rgba(255,255,255,.07)}
+#cA,#cH,#cB{font-size:26px;line-height:1}
 </style>
 </head>
 <body>
@@ -643,7 +655,7 @@ function buildDemoRows(events){
     var kind = String(ev.kind || '').toLowerCase();
     var d = decOf(ev);
     if (kind === 'request'){
-      var row = { key: 'd' + i, at: ev.at, kind: kindFor(ev.method, ev.url, ev.text), text: evText(ev) || ev.text, mono: true, dec: d, rule: ev.rule, note: (ev.url && ev.text && ev.text !== ev.url) ? ev.text : '' };
+      var row = { key: 'd' + i, at: ev.at, kind: kindFor(ev.method, ev.url, ev.text), text: evText(ev) || ev.text, mono: true, dec: d, rule: ev.rule, note: (ev.url && ev.text && ev.text !== ev.url && ev.text !== (String(ev.method || '') + ' ' + ev.url)) ? ev.text : '' };
       rows.push(row);
       openReq = d ? null : row;
       if (d === 'held') lastHeld.push(row);
@@ -804,15 +816,26 @@ function renderFeed(){
       '<div class="legend"><span class="chip allowed">allowed</span><span class="chip held">held · waiting for you</span><span class="chip blocked">blocked</span></div></div>';
     return;
   }
-  var html = '';
+  // The sandbox reports each command twice (the check and the run): show it once.
+  var shown = [];
   rows.forEach(function(r){
+    var p = shown[shown.length - 1];
+    if (p && p.kind === r.kind && p.text === r.text && (p.dec || '') === (r.dec || '')) return;
+    shown.push(r);
+  });
+  var BOILER = /^(Everything else the agent runs|Fetching a URL is routine|Model API)/i;
+  var html = '';
+  shown.forEach(function(r){
     var isNew = !S.seenKeys[r.key + '|' + r.dec];
     S.seenKeys[r.key + '|' + r.dec] = 1;
-    html += '<div class="ev ' + (r.cls || '') + (isNew ? ' new' : '') + '">' +
+    var quietRule = r.rule && (r.dec === 'allowed' || !r.dec) && BOILER.test(r.rule);
+    var isOut = r.kind === 'INFO' && /^exit \d+/.test(r.text || '');
+    var long = (r.text || '').length > 90 || /\n/.test(r.text || '');
+    html += '<div class="ev ' + (r.cls || '') + (isNew ? ' new' : '') + (isOut ? ' out' : '') + (long ? ' long' : '') + '"' + (quietRule ? ' title="' + esc(r.rule) + '"' : '') + '>' +
       '<span class="t">' + esc(fmtTime(r.at)) + '</span>' +
-      '<span class="badge b-' + esc(r.kind) + '">' + esc(r.kind) + '</span>' +
-      '<div class="x"><div class="' + (r.mono ? 'cmd' : '') + '">' + esc(trunc(r.text, 600)) + '</div>' + (r.note ? '<div class="note">' + esc(r.note) + '</div>' : '') + '</div>' +
-      '<div class="dec">' + (r.dec ? '<span class="chip ' + esc(r.dec) + '">' + esc(DEC_LABEL[r.dec] || r.dec) + '</span>' : '') + (r.rule ? '<span class="rule">' + esc(r.rule) + '</span>' : '') + '</div>' +
+      '<span class="badge b-' + esc(r.kind) + '">' + esc(isOut ? 'OUT' : r.kind) + '</span>' +
+      '<div class="x"><div class="' + (r.mono || isOut ? 'cmd' : '') + '" title="' + esc(trunc(r.text, 300)) + '">' + esc(trunc(r.text, 1200)) + '</div>' + (r.note ? '<div class="note">' + esc(r.note) + '</div>' : '') + '</div>' +
+      '<div class="dec">' + (r.dec ? '<span class="chip ' + esc(r.dec) + '">' + esc(DEC_LABEL[r.dec] || r.dec) + '</span>' : '') + (r.rule && !quietRule ? '<span class="rule">' + esc(r.rule) + '</span>' : '') + '</div>' +
       '</div>';
   });
   feed.innerHTML = html;
@@ -1030,6 +1053,7 @@ $('policyApply').addEventListener('click', function(){
     .catch(function(e){ errToast('Could not apply', e); }).then(function(){ $('policyApply').disabled = false; });
 });
 setInterval(function(){ if (S.ready && document.visibilityState === 'visible') loadPolicy(); }, 15000);
+$('feed').addEventListener('click', function(ev){ var row = ev.target.closest('.ev.long'); if (row && !ev.target.closest('button')) row.classList.toggle('open'); });
 renderQueue(); renderFeed(); renderApprovals(); renderKeys();
 (function waitReady(){ if (S.ready) loadPolicy(); else setTimeout(waitReady, 1000); })();
 boot();
