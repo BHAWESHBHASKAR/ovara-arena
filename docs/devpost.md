@@ -1,7 +1,7 @@
 # Devpost submission: OVARA Arena
 
 **Track:** Coding and Agentic Engineering (also entering Best Use of Tavily)
-**Demo:** https://ovara-grid.sidianlabs.workers.dev/redteam
+**Demo:** https://ovara-grid.sidianlabs.workers.dev (press "Watch an AI try to hack an AI")
 **Repo:** https://github.com/BHAWESHBHASKAR/ovara-arena (OVARA core: https://github.com/SidianLabs/OVARA)
 
 ## Tagline

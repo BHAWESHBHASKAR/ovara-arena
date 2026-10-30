@@ -40,7 +40,8 @@ header nav a.cta:hover{background:var(--brand-2)}
 @media(max-width:640px){header nav a.hide-sm{display:none}}
 
 /* hero */
-.hero{padding:72px 0 56px;text-align:center}
+.hero{padding-top:72px;padding-bottom:56px;text-align:center}
+@media(max-width:640px){.hero{padding-top:40px}.pill{font-size:12px;flex-wrap:wrap;justify-content:center}}
 .pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);border:1px solid var(--line-2);border-radius:99px;padding:5px 12px;background:var(--bg-2)}
 .pill b{color:#a6dd3a;font-weight:600}
 h1{font-size:clamp(36px,6.2vw,68px);line-height:1.03;letter-spacing:-.03em;margin:22px auto 0;font-weight:700;max-width:16ch}
@@ -191,7 +192,7 @@ footer .wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
 
 <main>
   <div class="wrap hero">
-    <span class="pill">Built on <b>NVIDIA Nemotron</b> · Nebius Token Factory · Tavily</span>
+    <span class="pill"><span>Built on <b>NVIDIA Nemotron</b></span><span>· Nebius Token Factory · Tavily</span></span>
     <h1>AI agents can be tricked into leaking your secrets. <span>OVARA stops them.</span></h1>
     <p class="sub">Coding agents read bug reports, READMEs and web pages written by strangers. One hidden sentence can make an agent upload your API keys. OVARA sits between the agent and the world and checks every single thing it does.</p>
     <div class="actions">
