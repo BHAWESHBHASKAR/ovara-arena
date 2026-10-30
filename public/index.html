@@ -360,7 +360,7 @@ function roundChip(n, cls) {
 
 $('go').onclick = async () => {
   if (!ready || live) return;
-  live = true; replayToken++; $('go').disabled = true; $('go').textContent = '● LIVE';
+  live = true; replayToken++; setSwitch('on'); $('go').disabled = true; $('go').textContent = '● LIVE';
   $('rr').textContent = 'REPLAY'; $('rr').className = 'b';
   best = null; clearCols(); vault(false); meter(0);
   $('f1').innerHTML = '<p class="empty">Searching the web for published attacks…</p>';
@@ -380,10 +380,11 @@ $('go').onclick = async () => {
         if (e.type === 'intel') {
           $('f1').innerHTML = `<div class="card"><span class="tac">research · Tavily</span><p class="plan">Read ${e.results.length} write-ups on attacks like this:</p>${e.results.slice(0, 4).map((x) => `<div class="src">· ${esc(x.title.slice(0, 90))}</div>`).join('')}</div>`;
         } else if (e.type === 'thinking') {
-          roundChip(e.n); clearCols(); lastReq = null; lastGuard = ''; tick(true);
+          roundChip(e.n); tick(true);
           story(e.n === 1 ? 'The attacker is writing its first trap.' : `The attacker read why round ${e.n - 1} failed and is changing tactics.`, 'Nemotron 3 Super on Nebius Token Factory.');
         } else if (e.type === 'attack') {
           $('f1').innerHTML = `<div class="card"><span class="tac">round ${e.round.n} · ${esc(e.round.technique || '')}</span><p class="plan">${esc(e.round.rationale || '')}</p><div class="payload"><span class="k">Hidden in the bug report</span>${hi(e.round.attack)}</div></div>`;
+          clearCols(); lastReq = null; lastGuard = ''; meter(0);
           story(`Round ${e.round.n}: the trap is planted. The agent starts its normal job.`, 'Every command it runs goes through OVARA first.');
           roundStart = Date.now(); seen = 0;
           clearInterval(pollTimer); pollTimer = setInterval(poll, 1000);
