@@ -503,7 +503,7 @@ function startTask(t){
 }
 
 /* ---------- endpoint A / C: demo polling ---------- */
-var DECISIONS = { allowed: 'allowed', approved: 'approved', held: 'held', blocked: 'blocked', denied: 'denied', 'not approved': 'denied', 'timed out': 'denied', waiting: 'held' };
+var DECISIONS = { allowed: 'allowed', approved: 'approved', held: 'held', blocked: 'blocked', refused: 'blocked', deny: 'blocked', denied: 'denied', 'not approved': 'denied', 'timed out': 'denied', waiting: 'held' };
 function decOf(ev){
   var d = String(ev.decision || '').toLowerCase();
   if (DECISIONS[d]) return DECISIONS[d];
