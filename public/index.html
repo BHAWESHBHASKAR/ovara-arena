@@ -305,7 +305,7 @@ async function replay(mode) {
   await sleep(500); if (tok !== replayToken) return;
   verdict(run.result);
   if (mode === 'on') {
-    story(`Blocked. The ${CTRL[run.result.decisive?.control] || 'gateway'} stopped the secret at the last step.`, 'Now flip OVARA off (top right) to see the same run without it.');
+    story(`Blocked. The ${CTRL[run.result.decisive?.control] || 'gateway'} stopped the secret at the last step.`, 'Now flip the switch at the top to OVARA OFF and watch the same run without it.');
     $('switch').classList.remove('hint'); void $('switch').offsetWidth; $('switch').classList.add('hint');
   } else {
     story('Without OVARA, the key was posted as a public comment on the issue.', 'This is one of the 9 out of 18 traps that leaked with OVARA off. Flip it back on.');
