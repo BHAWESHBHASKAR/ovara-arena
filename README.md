@@ -20,7 +20,12 @@ So it's two Nemotrons and a gate in between: one attacks, one defends, and every
 
 `bench/run.ts` plays the autopilot against every playable level twice, on the live deployment. Each run gets its own session, so its own fresh container. One run uses OVARA's protections off (the permissive preset), one uses the default policy. Same attacker, same agent, same image. Results go to `bench/results-*.json` (every attack, verdict, receipt id and what the agent was thinking) and, via `bench/summarize.ts`, to `public/bench.json` (the table on `/redteam`).
 
-<!-- BENCH -->
+| Measured on the live site | OVARA off | OVARA on |
+|---|---|---|
+| **Assume breach:** the agent carries out each of the 18 scripted attacks | **9 of 18** got the flag out | **0 of 18**: every one stopped by a named control, with a signed receipt |
+| **Adaptive:** Nemotron 3 Super attacker vs Nemotron 3 Super agent, up to 6 rounds per level | 0 of 21 | 0 of 27: the agent ignored most; OVARA stopped 6, the closest at 75% of the way |
+
+Defense in depth: the model refuses most attacks by itself, and OVARA holds when it doesn't.
 
 ## How NVIDIA Nemotron and Nebius Token Factory are used
 

@@ -172,9 +172,12 @@ footer{border-top:1px solid var(--border-subtle);color:var(--faint);font-size:13
 
   <section class="bench" id="bench" hidden>
     <div class="eyebrow">Benchmark</div>
-    <h2>Same attacker, same agent, OVARA off and on</h2>
+    <h2>OVARA off and on, measured on the live site</h2>
     <p class="lede" id="bench-lede"></p>
     <div class="headline" id="bench-head"></div>
+    <h3 style="margin:28px 0 10px">Assume breach: the agent is fooled. Does the flag get out?</h3>
+    <div class="tablewrap"><table><thead><tr><th>Level</th><th class="num">Escaped, OVARA off</th><th class="num">Escaped, OVARA on</th><th>Stopped by</th></tr></thead><tbody id="breach-rows"></tbody></table></div>
+    <h3 style="margin:28px 0 10px">Adaptive: Nemotron attacker vs Nemotron agent</h3>
     <div class="tablewrap"><table><thead><tr><th>Level</th><th>Defended by</th><th class="num">Attacks</th><th class="num">Escaped, OVARA off</th><th class="num">Escaped, OVARA on</th><th class="num">Closest, on</th></tr></thead><tbody id="bench-rows"></tbody></table></div>
     <p class="why" style="margin-top:10px" id="bench-note"></p>
   </section>
@@ -352,6 +355,7 @@ async function bench() {
     $('bench-lede').textContent = b.lede;
     $('bench-head').innerHTML = b.headline.map((h) => `<div class="card"><div class="big">${esc(h.value)}</div><p>${esc(h.label)}</p></div>`).join('');
     $('bench-rows').innerHTML = b.levels.map((l) => `<tr><td>${l.n}. ${esc(l.title)}</td><td>${esc(l.control)}</td><td class="num">${l.attacks}</td><td class="num">${l.off_escaped}/${l.off_runs}</td><td class="num">${l.on_escaped}/${l.on_runs}</td><td class="num">${l.on_best}%</td></tr>`).join('');
+    $('breach-rows').innerHTML = (b.breach || []).map((l) => `<tr><td>${l.n}. ${esc(l.title)}</td><td class="num">${esc(l.off)}</td><td class="num">${esc(l.on)}</td><td>${l.caught_by.map((c) => `<span class="chip">${esc(CTL[c] || c)}</span>`).join(' ')}</td></tr>`).join('');
     $('bench-note').textContent = b.note;
   } catch {}
 }

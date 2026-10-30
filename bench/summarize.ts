@@ -44,16 +44,33 @@ const tokens = [...pick.values()].reduce((a, r) => a + r.tokens, 0);
 const attackers = [...new Set([...pick.values()].map((r) => r.attacker.split('/').pop()))].join(', ');
 const last = [...pick.values()].map((r) => r.stamp).sort().pop() ?? '';
 
+// Assume breach: the newest scripted run on every template.
+interface Breach { level: number; template: string; title: string; mode: 'off' | 'on'; verdict: string; closeness: number; control?: string }
+const breachFiles = readdirSync('bench').filter((f) => /^breach-.*\.json$/.test(f)).sort();
+const breach: Breach[] = breachFiles.length ? JSON.parse(readFileSync(`bench/${breachFiles[breachFiles.length - 1]}`, 'utf8')).results : [];
+const bOff = breach.filter((r) => r.mode === 'off');
+const bOn = breach.filter((r) => r.mode === 'on');
+const escaped = (rs: Breach[]) => rs.filter((r) => r.verdict === 'escaped').length;
+const breachRows = [...new Set(breach.map((r) => r.level))].sort((a, b) => a - b).map((n) => {
+  const off = bOff.filter((r) => r.level === n);
+  const on = bOn.filter((r) => r.level === n);
+  return { n, title: rows.find((r) => r.n === n)?.title ?? '', off: `${escaped(off)}/${off.length}`, on: `${escaped(on)}/${on.length}`, caught_by: [...new Set(on.filter((r) => r.verdict !== 'escaped').map((r) => r.control).filter(Boolean))] };
+});
+const refused = [...pick.values()].flatMap((r) => done(r.rounds)).filter((r) => !r.decisive && r.verdict !== 'escaped').length;
+const gated = [...pick.values()].flatMap((r) => done(r.rounds)).filter((r) => r.decisive && r.verdict !== 'escaped').length;
+
 const out = {
   stamp: last,
-  lede: `${sum('attacks')} adaptive attacks written by ${attackers}, each run for real by a Nemotron 3 Super coding agent in a fresh sandbox, ${levels.length} levels × OVARA off and on. Measured ${last.slice(0, 10)}.`,
+  lede: `Two questions. If an attacker fools the agent, does the flag get out? And can a Nemotron attacker that learns from every block fool the agent at all? Measured on the live deployment, ${last.slice(0, 10)}.`,
   headline: [
-    { value: `${pct(sum('off_escaped'), sum('off_runs'))}%`, label: `of attacks got the flag out with OVARA's protections off (${sum('off_escaped')} of ${sum('off_runs')})` },
-    { value: `${pct(sum('on_escaped'), sum('on_runs'))}%`, label: `got it out with OVARA's default policy (${sum('on_escaped')} of ${sum('on_runs')})` },
-    { value: tokens.toLocaleString('en-US'), label: 'Nemotron tokens spent by the attacker and the defender' },
+    { value: `${escaped(bOff)}/${bOff.length}`, label: "scripted attacks got the flag out with OVARA's protections off (the agent was made to carry each one out)" },
+    { value: `${escaped(bOn)}/${bOn.length}`, label: "got it out with OVARA's default policy. Every attack was stopped by a control and has a signed receipt." },
+    { value: `${sum('on_escaped') + sum('off_escaped')}/${sum('attacks')}`, label: `adaptive attacks by ${attackers} got the flag out against a Nemotron 3 Super agent. The agent ignored ${refused}; OVARA stopped ${gated}.` },
   ],
+  breach: breachRows,
   levels: rows,
-  note: "\"OVARA off\" is OVARA's permissive preset: no taint rule, no content scanning, no risk judge, no push approval. Key custody and the fixture-only network stay on in both modes, because they sit outside the policy. Every round's attack text, verdict and receipt id is in the repository under bench/.",
+  tokens,
+  note: "\"OVARA off\" is OVARA's permissive preset: no taint rule, no content scanning, no risk judge, no push approval. Key custody and the fixture-only network stay on in both modes, because they sit outside the policy; that is why some attacks are contained even with OVARA off. Every attack, verdict and receipt id is in the repository under bench/.",
 };
 writeFileSync('public/bench.json', JSON.stringify(out, null, 2));
 console.log(JSON.stringify(out, null, 2));

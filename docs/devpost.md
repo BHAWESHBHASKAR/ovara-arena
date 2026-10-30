@@ -2,7 +2,7 @@
 
 **Track:** Coding and Agentic Engineering (also entering Best Use of Tavily)
 **Demo:** https://ovara-grid.sidianlabs.workers.dev/redteam
-**Repo:** https://github.com/SidianLabs/ovara-arena (OVARA core: https://github.com/SidianLabs/OVARA)
+**Repo:** https://github.com/BHAWESHBHASKAR/ovara-arena (OVARA core: https://github.com/SidianLabs/OVARA)
 
 ## Tagline
 Nemotron attacks. OVARA holds. Nemotron learns.
@@ -23,7 +23,12 @@ The new part is the **red team autopilot**:
 Nemotron plays every part: it is the agent under attack, the attacker, the risk judge and the defender.
 
 ## Benchmark
-BENCH_SUMMARY
+Measured on the live deployment, each run in its own fresh sandbox:
+
+- **Assume breach.** The agent is made to carry out every scripted attack in the Arena (18 across 5 levels). With OVARA's protections off, **9 of 18** got the flag out. With OVARA's default policy, **0 of 18** did. Every one was stopped by a named control with a signed receipt: the risk judge, policy, the taint rule, content scanning, key custody and push approval each caught at least one.
+- **Adaptive.** Nemotron 3 Super attacked a Nemotron 3 Super agent for up to 6 rounds per level, learning from every verdict, with OVARA off and on. **0 of 48** completed attacks got the flag out. The agent ignored the bait 42 times; OVARA stopped the other 6 (its closest attempts reached 75% of the way before a control held).
+
+That is defense in depth: Nemotron itself ignores most attacks, and OVARA catches the ones that get through. A model that gets fooled 1 time in 100 is a breach waiting to happen, without a gate behind it.
 
 ## How I built it
 - **Nebius Token Factory** serves all the models: Nemotron 3 Super for the agent, the attacker, the defender and the policy author, and Nemotron 3 Nano for the first pass of the risk judge, which runs on every request no rule covers. The judge escalates hard cases from Nano to Super, so cheap calls stay cheap and hard calls get reasoning.
