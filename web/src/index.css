@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-canvas: #0a0a0c;
+  --color-panel: #111115;
+  --color-line: #1f1f26;
+  --color-accent: #6366f1;
+}
+html, body { background: var(--color-canvas); color: #e4e4e7; }
+body { margin: 0; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }

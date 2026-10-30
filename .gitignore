@@ -4,3 +4,5 @@ dist/
 .dev.vars
 *.key
 bench/local-emulated/
+
+web/node_modules
