@@ -26,7 +26,7 @@ function kindFor(method?: string, url?: string, text?: string) {
 }
 const hideRule = (r: string) => !r || /^R\d+ · Everything else/.test(r) || r.startsWith('Fetching a URL is routine') || r.startsWith('Model API')
 
-type Row = { key: string; at: number; type: 'req' | 'thought' | 'exit' | 'text'; kind?: string; text: string; dec?: string | null; rule?: string }
+type Row = { key: string; at: number; type: 'req' | 'thought' | 'exit' | 'text' | 'task' | 'finish'; kind?: string; text: string; dec?: string | null; rule?: string }
 function buildRows(events: any[]): Row[] {
   const rows: Row[] = []
   for (let i = 0; i < events.length; i++) {
@@ -40,6 +40,8 @@ function buildRows(events: any[]): Row[] {
     } else if (['allowed', 'held', 'blocked', 'refused', 'approved', 'denied'].includes(k)) {
       rows.push({ key: 'e' + i, at, type: 'req', kind: kindFor(ev.method, ev.url, ev.text), text: ev.text || ev.url || '', dec: decOf(ev), rule: ev.rule || '' })
     } else if (k === 'thought') rows.push({ key: 'e' + i, at, type: 'thought', text: ev.text || '' })
+    else if (k === 'task') rows.push({ key: 'e' + i, at, type: 'task', text: String(ev.text || '').replace(/^Task:\s*/i, '') })
+    else if (k === 'finish') rows.push({ key: 'e' + i, at, type: 'finish', text: ev.text || '' })
     else if (k === 'info' && /^exit/i.test(ev.text || '')) rows.push({ key: 'e' + i, at, type: 'exit', text: ev.text })
     else if (ev.text) rows.push({ key: 'e' + i, at, type: 'text', kind: k.toUpperCase(), text: ev.text })
   }
@@ -199,7 +201,8 @@ function Shift() {
           <div className="space-y-4">
             {/* queue */}
             <Card title="Queue" right={running && <Badge tone="indigo" dot>Running</Badge>}>
-              <Textarea rows={3} value={composer} onChange={e => setComposer(e.target.value)} placeholder="Give the agent a task…" disabled={!!running} />
+              <Textarea rows={3} value={composer} onChange={e => setComposer(e.target.value)} placeholder="Message the agent… (Enter to send, Shift+Enter for a new line)" disabled={!!running}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && composer.trim() && !running && boot.ready) { e.preventDefault(); start({ id: 'custom', title: composer.trim(), ep: 'A', task: composer.trim() }) } }} />
               <div className="mt-2 flex gap-2">
                 <Button variant="primary" size="sm" className="flex-1" disabled={!composer.trim() || !!running || !boot.ready}
                   onClick={() => start({ id: 'custom', title: composer.trim(), ep: 'A', task: composer.trim() })}><Play className="size-3.5" />Run with Nemotron</Button>
@@ -242,9 +245,21 @@ function Shift() {
           {/* live feed */}
           <Card title={running ? `Live · ${running.title}` : 'Live feed'} className="flex min-h-[420px] flex-col">
             <div ref={feedRef} className="max-h-[560px] min-h-[360px] space-y-0.5 overflow-y-auto">
-              {!rows.length && !ocLog && <p className="text-sm text-zinc-500">{boot.ready ? 'Pick a task. Every request the agent makes shows up here with OVARA’s decision.' : 'Waiting for the sandbox…'}</p>}
-              {rows.map(r => r.type === 'thought' ? (
-                <div key={r.key} className="py-1 pl-[72px] text-xs italic text-zinc-500">{r.text}</div>
+              {!rows.length && !ocLog && <p className="text-sm text-zinc-500">{boot.ready ? 'Say something to the agent. Its replies, every command it runs and OVARA’s decision on each one show up here.' : 'Waiting for the sandbox…'}</p>}
+              {rows.map(r => r.type === 'task' ? (
+                <div key={r.key} className="flex justify-end py-2">
+                  <div className="max-w-[78%] rounded-2xl rounded-br-md bg-indigo-500/20 px-3.5 py-2 text-sm text-zinc-100 ring-1 ring-indigo-400/30">
+                    <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-300/80">You</div>{r.text}</div>
+                </div>
+              ) : r.type === 'finish' ? (
+                <div key={r.key} className="flex justify-start py-2">
+                  <div className="max-w-[78%] rounded-2xl rounded-bl-md bg-emerald-500/10 px-3.5 py-2 text-sm text-zinc-100 ring-1 ring-emerald-400/25">
+                    <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300/80">Nemotron · done</div>{r.text}</div>
+                </div>
+              ) : r.type === 'thought' ? (
+                <div key={r.key} className="flex justify-start py-1">
+                  <div className="max-w-[78%] rounded-2xl rounded-bl-md bg-white/[0.04] px-3.5 py-2 text-xs italic text-zinc-400 ring-1 ring-white/[0.06]">{r.text}</div>
+                </div>
               ) : r.type === 'exit' ? (
                 <div key={r.key} className="py-0.5 pl-[72px] font-mono text-[11px] text-zinc-600">{r.text}</div>
               ) : (
