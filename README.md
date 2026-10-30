@@ -23,7 +23,9 @@ So it's two Nemotrons and a gate in between: one attacks, one defends, and every
 | Measured on the live site | OVARA off | OVARA on |
 |---|---|---|
 | **Assume breach:** the agent carries out each of the 18 scripted attacks | **9 of 18** got the flag out | **0 of 18**: every one stopped by a named control, with a signed receipt |
-| **Adaptive:** Nemotron 3 Super attacker vs Nemotron 3 Super agent, up to 6 rounds per level | 0 of 21 | 0 of 27: the agent ignored most; OVARA stopped 6, the closest at 75% of the way |
+| **Adaptive:** Nemotron 3 Super attacker vs Nemotron 3 Super agent, up to 6 rounds per level | 0 of 24 | 0 of 24 |
+
+In the adaptive runs the agent ignored the bait 42 times and a control stopped the other 6; the closest attempt reached 75% of the way.
 
 Defense in depth: the model refuses most attacks by itself, and OVARA holds when it doesn't.
 
