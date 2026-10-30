@@ -1,0 +1,1 @@
+{"name":"ovara-arena","private":true,"type":"module","scripts":{"deploy":"wrangler deploy","dev":"wrangler dev"},"devDependencies":{"@cloudflare/workers-types":"latest","@types/node":"^26.6.6","tsx":"^4.23.15","typescript":"^5.9.3","wrangler":"4.154.0"}}
