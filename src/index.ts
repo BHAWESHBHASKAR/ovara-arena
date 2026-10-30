@@ -54,7 +54,9 @@ export default {
 
     // 1. The page itself never touches a sandbox. It only hands out a session id.
     if (!u.pathname.startsWith('/api/')) {
-      const res = await env.ASSETS.fetch(req);
+      // The Shift console is the home page; the full OVARA dashboard stays at /app.
+      const assetReq = u.pathname === '/' ? new Request(new URL('/shift.html', u.origin), req) : req;
+      const res = await env.ASSETS.fetch(assetReq);
       const sid = cookie(req, 'ovara_sid');
       if (sid && SID.test(sid)) return res;
       const out = new Response(res.body, res);

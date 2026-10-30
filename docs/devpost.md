@@ -1,57 +1,82 @@
-# Devpost submission: OVARA Arena
+# Devpost submission: OVARA Shift
 
 **Track:** Coding and Agentic Engineering (also entering Best Use of Tavily)
-**Demo:** https://ovara-grid.sidianlabs.workers.dev (the OVARA dashboard and arena; the recorded session and live attacker are at /demo)
+**Demo:** https://ovara-grid.sidianlabs.workers.dev (live Shift console; full dashboard at /app, recorded session at /demo)
 **Repo:** https://github.com/BHAWESHBHASKAR/ovara-arena (OVARA core: https://github.com/SidianLabs/OVARA)
 
 ## Tagline
-Nemotron attacks. OVARA holds. Nemotron learns.
+Put a real coding agent on shift in production. OVARA sits on the wire, holds anything consequential for a human, and signs a receipt for every decision.
 
-## Inspiration
-Coding agents now read untrusted text all day: issues, READMEs, web pages, tool output. Any of it can carry orders, and the damage is whatever the agent does next: an upload of `.env`, a push to main, a key pasted into a prompt. I built OVARA, an open-source gateway that the agent's network requests, and inside its sandbox its commands, pushes and model calls, go through. A gateway is only as good as the attacks it has seen, though, and attackers adapt. So I wanted a defender attacked repeatedly by a model that adapts.
+## The problem
+Teams are starting to run coding agents unattended: nightly issue fixers, CI bots, Devin-style workers, with real tokens. These agents read untrusted text all day (GitHub issues, READMEs, web pages, tool output), and any of it can carry instructions. The damage is whatever the agent does next: upload `.env`, push to main, paste a key into a prompt. A prompt filter only sees text.
+
+Today the choice is "trust the model" or "don't run it". I wanted a third option: run the agent, gate the consequential actions, keep the keys out of its hands, and keep a record you can verify afterwards. OVARA is the open-source gateway (Go, Apache-2.0) I built for that. OVARA Shift is the product an engineering team would actually put in front of an agent.
 
 ## What it does
-OVARA Arena gives every visitor a private sandbox with a real coding agent (NVIDIA Nemotron 3 Super on Nebius Token Factory) and five levels, each guarded by a different OVARA control: policy and a risk judge, the taint rule, content scanning, credential custody, and scanning of model calls. You try to make the agent leak a fake flag.
+OVARA Shift is an operations console. A real, unmodified open-source coding agent (OpenCode) or a Nemotron tool-calling agent works a task queue inside an OVARA sandbox (`ovara box`). Each visitor gets a private sandbox, a Cloudflare Container, with a sample Python repo (`invoice`, a library with a failing test and issue #42: totals are 100x too high), a fake `.env`, a local git origin and fixture-only networking.
 
-The new part is the **red team autopilot**:
-1. **Research:** Tavily finds published prompt-injection techniques against the control that guards the level.
-2. **Attack:** Nemotron 3 Super writes an attack and plants it where the level allows.
-3. **Gate:** the guarded agent really runs it. OVARA allows, holds or blocks every action and signs a receipt.
-4. **Adapt:** OVARA's verdict goes back to the attacker: how far it got, which control stopped it, and why. The next round routes around that control.
-5. **Harden:** Nemotron reads the attack that got furthest and drafts a policy rule. OVARA's validator checks it, you apply it with one click, and a replay of the attack is stopped earlier in the chain.
+Every shell command, git push, HTTP request and model call goes through OVARA:
+- Reads and routine commands are allowed.
+- Pushes, deploys and traffic to unknown destinations are held and appear in the Approvals inbox. The operator approves, approves and remembers, or denies.
+- Paste sites and key exfiltration are blocked outright.
+- OVARA holds the real Nebius and Tavily keys and injects them on egress, so the agent only ever sees a placeholder.
+- Every allow, hold and block is a signed, hash-chained receipt, and the console verifies the chain live.
 
-Nemotron models fill four roles: the coding agent, the attacker, the risk judge and the rule drafter.
+The console has four panels: Queue, Live feed, Approvals and Receipts.
 
-## Benchmark
-Measured on the live deployment, each run in its own fresh sandbox:
+There is also an Incident drill task. It feeds the agent a poisoned bug report with hidden instructions to upload `.env`. OVARA's taint rule and risk judge catch it. Then Nemotron 3 Ultra drafts a plain-English policy rule from the incident, OVARA validates it, and the operator applies it with one click.
 
-- **Assume breach.** The agent is made to carry out every scripted attack in the Arena (18 across 5 levels). With OVARA's protections off, **9 of 18** got the flag out. With OVARA's default policy, **0 of 18** did. Every one was stopped by a named control with a signed receipt: the risk judge, policy, the taint rule, content scanning, key custody and push approval each caught at least one.
-- **Adaptive.** Nemotron 3 Super attacked a Nemotron 3 Super agent for up to 6 rounds per level, learning from every verdict, with OVARA off and on. **0 of 48** completed attacks got the flag out. The agent ignored the bait 42 times; OVARA stopped the other 6 (its closest attempts reached 75% of the way before a control held).
+## How Nemotron and Token Factory are used
+All models run at runtime on Nebius Token Factory.
 
-That is defense in depth: Nemotron itself ignores most attacks, and OVARA catches the ones that get through.
+| Role | Model | Why this size |
+|---|---|---|
+| Coding agent (tool-calling: shell, git, HTTP) | `nvidia/nemotron-3-super-120b-a12b` | Multi-step fixes with tool calls |
+| OpenCode's model (via OVARA's egress proxy, key injected) | `nvidia/nemotron-3-super-120b-a12b` | Runs an unmodified open-source agent on Nemotron |
+| Risk judge, first pass on every request no rule covers | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Runs inline on every uncovered request, so it has to be fast and cheap |
+| Risk judge escalation (hard cases, checks destination with Tavily) | `nvidia/nemotron-3-super-120b-a12b` | Takes the hard cases Nano hands up |
+| Policy author (plain English to validated policy) | `nvidia/nemotron-3-super-120b-a12b` | Turns a sentence into rules that OVARA's validator then checks |
+| Incident rule drafter | `nvidia/Nemotron-3-Ultra-550b-a55b` | Generalises from one incident to its family without breaking the agent's real work |
+
+**Tavily** is used at runtime by the risk judge to check unknown destinations on the web before a verdict.
+
+The agent never holds a Nebius or Tavily key. Its model calls go through OVARA's egress proxy, which injects the real key on the way out. A poisoned task has no real key to leak.
 
 ## How I built it
-- **Nebius Token Factory** serves all the models: Nemotron 3 Super for the agent, the attacker, the defender and the policy author, and Nemotron 3 Nano for the first pass of the risk judge, which runs on every request no rule covers. The judge escalates hard cases from Nano to Super, so cheap calls stay cheap and hard calls get reasoning.
-- **OVARA** (Go) runs inside each sandbox: gateway, egress proxy, policy, taint tracking, content scanning, key custody and hash-chained signed receipts. The agent never holds a real key. OVARA injects the Nebius key on the way out, so even the agent's own model calls go through the gate.
-- **Cloudflare Workers + Containers:** one Durable Object and one container per visitor, plus quotas, a daily cap and a kill switch, so a public demo can't run up a bill.
-- **Tavily** powers the attacker's research step, and the judge's web evidence when a destination is unknown.
-- The autopilot (`src/redteam.ts`) is one loop shared by the live page and the benchmark harness, so the numbers on the page come from the same code visitors run.
+- **OVARA** (Go) runs inside each sandbox as `ovara sandbox-serve`: gateway, egress proxy, policy, taint tracking, content scanning, key custody, approvals, hash-chained signed receipts, the risk judge and the policy author.
+- **Cloudflare Workers + Containers**: the Worker (`src/index.ts`) handles the session cookie and quotas, and starts one Durable Object and one container per visitor. Quotas, a daily cap, a per-sandbox spend cap and a kill switch keep a public, model-backed demo from running up a bill.
+- **The console** (`public/shift.html`, served at `/`) is a single page over OVARA's APIs. `/app` is the full OVARA dashboard with the policy editor and receipts, and `/demo` is a recorded session.
+- **OpenCode** runs unmodified. Its model endpoint points at OVARA's egress proxy, so it needs no special integration.
+- Everything dangerous is inert: fake secrets and keys, external hosts under `.example` and `.invalid`, fixture-only networking whatever the policy says.
+
+### Evidence
+I also attacked it adaptively; here are the numbers, measured on the live deployment with each run in its own fresh sandbox. In the assume-breach run the agent carries out 18 scripted attacks: with OVARA's protections off, 9 of 18 leaked the planted secret, and with OVARA on, 0 of 18. In the adaptive run, a Nemotron attacker played against the Nemotron agent for up to 6 rounds per scenario: 0 escapes, the agent ignored the bait 42 times, and OVARA stopped the other 6.
 
 ## Challenges
-- Making the attacker actually learn. What worked was feeding back OVARA's *structured* verdict: the stages reached, the decisive control and its reason, rather than just pass or fail.
-- Keeping a live, public, model-backed security demo safe and cheap: fixture-only networking, fake secrets, per-sandbox spend caps and global daily caps.
-- Being honest about the baseline. "OVARA off" is the arena's permissive preset on the same engine (no taint rule, no content scanning, no risk judge, no push approval); key custody and the fixture-only network stay on in both modes. The benchmark says so.
+- Deciding what gets held. Holding too much makes the operator approve everything without reading. The split that worked: allow reads and routine commands, hold pushes, deploys and unknown destinations, block exfiltration paths outright.
+- Running an unmodified agent. OpenCode needed no changes once its model traffic went through the egress proxy with the key injected, but making every command and push pass through OVARA inside the container took most of the integration time.
+- An honest baseline. "OVARA off" in the Evidence runs is a permissive preset on the same engine (no taint rule, no content scanning, no risk judge, no push approval). Key custody and the fixture-only network stay on in both modes, and the benchmark says so.
+- Keeping it safe and cheap in public: fixture networks, fake secrets, spend caps.
 
 ## What I learned
-CONFIRM_WITH_BHAWESH
+- Models are already a decent first line: Nemotron 3 Super ignored most injections by itself. The gateway matters for the minority that get through, and those are the ones that would have leaked a key.
+- A rule drafter writes better rules when it is shown the full incident and the control that caught it, not just the poisoned text. Ultra's rules generalised; Super's tended to block the literal string.
+- Cheap-then-escalate (Nano first, Super on hard cases) kept the risk judge fast enough to sit inline on every request.
+- A human approval step only works if the console shows what the action is and why it was held. The receipt and the verdict reason next to each held item did most of that work.
 
 ## What's next
-- Run the autopilot every night against every level, and turn the rules that hold up into OVARA's defaults.
-- Levels 6–8: tool pinning (a tool that rewrites its own description), request-bound approvals, and a boss level.
-- Ship the autopilot as `ovara redteam` in the OVARA CLI, so teams can attack their own agent setups.
+- Run Shift against a team's own repo and task queue, with OpenCode in CI.
+- Export and verify receipts outside the console, so an auditor can check the chain without the UI.
+- Turn rules that operators apply repeatedly into OVARA's defaults.
+- More agents behind the same sandbox: any agent that speaks HTTP and runs shell commands should work.
 
 ## What changed during the submission period
-OVARA's gateway predates the hackathon. Built during the submission period: the Arena (per-visitor Cloudflare sandboxes, five levels, story mode, live policy editing), Nemotron on Nebius as the agent, judge and policy author, and on the final day the red team autopilot, the Nemotron defender, the Tavily research step and the benchmark.
+OVARA's gateway predates the hackathon. Built during the submission period: the per-visitor Cloudflare sandboxes, Nemotron on Nebius as the agent, risk judge and policy author, OpenCode running through OVARA's egress proxy with key injection, and the Shift console itself: the task queue, live feed, Approvals inbox and live receipt verification, plus the Incident drill with the Nemotron 3 Ultra rule drafter and the benchmark.
 
 ## Feedback on Nebius Token Factory and NVIDIA models
-CONFIRM_WITH_BHAWESH (Most Valuable Feedback prize: give real notes from your own use: sign-up and billing, the promo codes, model naming such as `NVIDIA-Nemotron-3-Nano-30B-A3B` vs `nemotron-3-super-120b-a12b` casing, latency, JSON output reliability.)
+(Keep only what matches your experience.)
+- Model id casing is inconsistent across the catalogue: `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` vs `nvidia/nemotron-3-super-120b-a12b` vs `nvidia/Nemotron-3-Ultra-550b-a55b`. One convention would save a lot of copy-paste errors.
+- Reasoning content: Super and Ultra sometimes return `<think>` blocks inside `content` rather than only in `reasoning_content`, so every caller has to strip them. A flag to suppress reasoning in `content` would help.
+- 429s and 5xx under burst: I had to add retry with backoff on every call. Published per-model rate limits and a `Retry-After` header would make capacity planning easier.
+- JSON output: strict JSON came back reliably from Super with a clear schema in the system prompt, less reliably from Nano. A response-format parameter enforced server-side would remove the parsing fallbacks.
+- What worked well: the OpenAI-compatible endpoint meant zero SDK work, and Nano is cheap and fast enough to run inline on every gateway request, which made the cheap-then-escalate judge design possible.

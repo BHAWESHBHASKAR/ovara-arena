@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>OVARA Shift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0c10;--panel:#13151c;--panel2:#181b23;--border:#22252f;--text:#e8e9ee;--muted:#8b8f9c;
+  --accent:#6e5ff7;--ok:#3ccf91;--held:#f5b84a;--bad:#ff5c5c;
+  --r:12px;--g:16px;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font:15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:var(--text)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.45}
+.mono{font-family:var(--mono);font-size:13px}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:20;background:rgba(11,12,16,.94);border-bottom:1px solid var(--border);backdrop-filter:blur(6px)}
+.top-in{max-width:1480px;margin:0 auto;padding:12px var(--g);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-width:0}
+.word{font-weight:700;font-size:18px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.word .mark{width:18px;height:18px;border-radius:5px;background:var(--accent);display:inline-block}
+.sub{color:var(--muted);font-size:13.5px}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.top-right a{color:var(--muted);text-decoration:none;font-size:14px}
+.top-right a:hover{color:var(--text)}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--panel);border-radius:999px;padding:4px 12px;font-size:13px;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.pill.live .dot{background:var(--ok)}
+.pill.boot .dot{background:var(--held);animation:pulse 1.2s infinite}
+.pill.down .dot{background:var(--bad)}
+@keyframes pulse{50%{opacity:.3}}
+
+.banner{max-width:1480px;margin:12px auto 0;padding:0 var(--g)}
+.banner div{border:1px solid #4a3a17;background:#1d1910;color:#f3d9a4;border-radius:var(--r);padding:10px 14px;font-size:14px}
+
+/* grid */
+.wrap{max-width:1480px;margin:0 auto;padding:var(--g)}
+.grid{display:grid;grid-template-columns:300px minmax(0,1fr) 380px;gap:var(--g);align-items:start}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);min-width:0}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.ph h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.pb{padding:14px}
+.col{display:flex;flex-direction:column;gap:var(--g);min-width:0}
+
+/* queue */
+.task{border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--panel2);display:flex;flex-direction:column;gap:8px}
+.task+.task{margin-top:10px}
+.task.active{border-color:var(--accent)}
+.task h3{margin:0;font-size:14.5px;font-weight:600;line-height:1.35}
+.task .meta{font-size:12.5px;color:var(--muted)}
+.task .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn{border:1px solid var(--border);background:var(--panel);border-radius:8px;padding:6px 12px;font-size:13.5px;font-weight:500}
+.btn:hover:not(:disabled){border-color:#3a3e4c}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover:not(:disabled){background:#7d70f8}
+.btn.ok{border-color:#1f5a41;color:var(--ok)}
+.btn.bad{border-color:#5a2424;color:var(--bad)}
+.state{font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px;border:1px solid var(--border);color:var(--muted);white-space:nowrap}
+.state.done,.state.allowed,.state.approved{color:var(--ok);border-color:#1f5a41;background:#0f1f18}
+.state.held{color:var(--held);border-color:#5a4418;background:#1f190d}
+.state.blocked,.state.error,.state.denied{color:var(--bad);border-color:#5a2424;background:#200f10}
+.state.running{color:#b9b1ff;border-color:#3a3270;background:#17142c}
+.tag{display:inline-block;font-size:11.5px;color:#b9b1ff;border:1px solid #3a3270;border-radius:6px;padding:0 6px;margin-top:2px}
+
+/* feed */
+.feed-panel{display:flex;flex-direction:column;height:calc(100vh - 110px);min-height:560px}
+.feed-head{display:flex;flex-direction:column;gap:6px}
+.counts{display:flex;gap:12px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.counts b{font-weight:600}
+.feed{flex:1;overflow-y:auto;overflow-x:hidden}
+.ev{display:grid;grid-template-columns:62px 86px minmax(0,1fr) auto;gap:10px;align-items:start;padding:9px 14px;border-bottom:1px solid #1a1d25}
+.ev:last-child{border-bottom:0}
+.ev.new{animation:fadein .35s ease}
+@keyframes fadein{from{background:#191b26}to{background:transparent}}
+.ev .t{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:2px}
+.badge{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.04em;border:1px solid var(--border);border-radius:6px;padding:1px 6px;text-align:center;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b-RUN{color:#c9cdf7;border-color:#30355a}
+.b-HTTP{color:#9fd4ff;border-color:#21405a}
+.b-MODEL{color:#b9b1ff;border-color:#3a3270}
+.b-PUSH{color:var(--held);border-color:#5a4418}
+.b-TASK{color:var(--text);border-color:#3a3e4c}
+.b-OPENCODE{color:#9fe3c4;border-color:#1f4a38}
+.ev .x{min-width:0;word-break:break-word}
+.ev .x .cmd{font-family:var(--mono);font-size:13px}
+.ev .x .note{font-size:12.5px;color:var(--muted);margin-top:2px}
+.ev.thought .x{color:#b6b9c4;font-style:italic}
+.ev.info .x{color:var(--muted);font-size:13.5px}
+.dec{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}
+.dec .rule{font-size:11.5px;color:var(--muted);max-width:220px;line-height:1.3}
+.chip{font-size:12px;font-weight:600;border-radius:999px;padding:1px 9px;white-space:nowrap;border:1px solid}
+.chip.allowed,.chip.approved{color:var(--ok);border-color:#1f5a41;background:#0f1f18}
+.chip.held{color:var(--held);border-color:#5a4418;background:#1f190d}
+.chip.blocked,.chip.denied{color:var(--bad);border-color:#5a2424;background:#200f10}
+.empty{padding:28px 20px;color:var(--muted);font-size:14px}
+.empty h4{margin:0 0 6px;color:var(--text);font-size:15px;font-weight:600}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+/* approvals */
+.flash{animation:flash 1.6s ease 2}
+@keyframes flash{30%{background:#2a2112}}
+.count{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.count.hot{color:var(--held)}
+.card{border:1px solid #5a4418;background:#17140d;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.card+.card{margin-top:10px}
+.card .what{font-weight:600;word-break:break-word}
+.card .raw{font-family:var(--mono);font-size:12.5px;color:var(--muted);word-break:break-all}
+.card .why{font-size:13px;color:#e9d3a6}
+.card ul{margin:0;padding-left:16px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.card .acts{display:flex;gap:8px;flex-wrap:wrap}
+.judge{background:#18162a;border:1px solid #2e2856;border-radius:8px;padding:8px 10px;font-size:13px}
+
+/* receipts */
+.chain{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.big{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.verif{font-size:13px;font-weight:600}
+.verif.ok{color:var(--ok)}.verif.bad{color:var(--bad)}
+.kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-top:8px}
+.kv span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rlist{margin-top:12px;border-top:1px solid var(--border)}
+.rc{display:grid;grid-template-columns:58px 74px minmax(0,1fr);gap:8px;padding:7px 0;border-bottom:1px solid #1a1d25;font-size:12.5px;align-items:start}
+.rc .w{word-break:break-word}
+.rc .w .rule{color:var(--muted);font-size:11.5px}
+.keys{font-size:13.5px}
+.keys .line{display:flex;justify-content:space-between;gap:10px;padding:4px 0}
+.keys .line span:last-child{text-align:right;min-width:0;word-break:break-word}
+.zero{color:var(--ok);font-weight:700}
+
+/* below fold */
+.section{margin-top:40px}
+.section h2{font-size:22px;margin:0 0 6px;letter-spacing:-.01em}
+.section .lead{color:var(--muted);margin:0 0 18px;max-width:720px}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--g)}
+.step{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.step .n{font-family:var(--mono);color:var(--accent);font-size:13px}
+.step h3{margin:6px 0 6px;font-size:15.5px}
+.step p{margin:0;color:var(--muted);font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+tr:last-child td{border-bottom:0}
+.tablewrap{overflow-x:auto}
+textarea{width:100%;min-height:72px;resize:vertical;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font:14px/1.45 Inter,system-ui,sans-serif}
+textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.draft{margin-top:14px;display:none}
+.draft pre{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:var(--mono);font-size:12.5px;white-space:pre-wrap;word-break:break-word;margin:6px 0 0}
+.incident{border-color:#5a2424}
+footer{color:var(--muted);font-size:13px;padding:30px var(--g) 40px;max-width:1480px;margin:0 auto}
+
+/* toast */
+#toasts{position:fixed;right:16px;bottom:16px;z-index:50;display:flex;flex-direction:column;gap:8px;max-width:min(380px,calc(100vw - 32px))}
+.toast{background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:13.5px;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.toast.err{border-left-color:var(--bad)}
+.toast.ok{border-left-color:var(--ok)}
+
+@media (max-width:1180px){.grid{grid-template-columns:280px minmax(0,1fr)}.col.right{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr}}
+@media (max-width:860px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .col.right{display:flex}
+  .feed-panel{height:auto;min-height:0}
+  .feed{max-height:64vh;min-height:280px}
+  .steps{grid-template-columns:1fr 1fr}
+}
+@media (max-width:520px){
+  .steps{grid-template-columns:1fr}
+  .ev{grid-template-columns:54px minmax(0,1fr);gap:4px 10px}
+  .ev .badge{grid-column:2;justify-self:start}
+  .ev .x{grid-column:1 / -1}
+  .ev .dec{grid-column:1 / -1;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px}
+  .ev .dec .rule{max-width:none}
+  .sub{display:none}
+  .top-right{margin-left:0;width:100%}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <div class="word"><span class="mark" aria-hidden="true"></span>OVARA Shift</div>
+      <div class="sub">A coding agent on shift. OVARA on the wire.</div>
+    </div>
+    <div class="top-right">
+      <span id="pill" class="pill boot"><span class="dot"></span><span id="pillText">Booting sandbox</span></span>
+      <a href="#how">How it works</a>
+      <a href="#receipts">Receipts</a>
+    </div>
+  </div>
+</header>
+<div class="banner" id="banner" hidden><div id="bannerText"></div></div>
+
+<main class="wrap">
+  <div class="grid">
+    <!-- Queue -->
+    <section class="col">
+      <div class="panel">
+        <div class="ph"><h2>Queue</h2><span class="count" id="queueNote">1 at a time</span></div>
+        <div class="pb" id="queue"></div>
+      </div>
+    </section>
+
+    <!-- Feed -->
+    <section class="panel feed-panel" aria-label="Live feed">
+      <div class="ph feed-head">
+        <div style="display:flex;justify-content:space-between;width:100%;gap:8px;align-items:center">
+          <h2>Live feed</h2>
+          <span class="state" id="runState">idle</span>
+        </div>
+        <div class="counts" id="counts">
+          <span>allowed <b style="color:var(--ok)" id="cA">0</b></span>
+          <span>held <b style="color:var(--held)" id="cH">0</b></span>
+          <span>blocked <b style="color:var(--bad)" id="cB">0</b></span>
+          <span id="runLabel" class="muted"></span>
+        </div>
+      </div>
+      <div class="feed" id="feed" aria-live="polite"></div>
+    </section>
+
+    <!-- Right -->
+    <section class="col right">
+      <div class="panel" id="approvalsPanel">
+        <div class="ph" id="approvalsHead"><h2>Approvals</h2><span class="count" id="pendCount">0 waiting</span></div>
+        <div class="pb" id="approvals"></div>
+      </div>
+      <div class="panel" id="receipts">
+        <div class="ph"><h2>Receipt chain</h2><button class="btn" id="verifyBtn">Verify</button></div>
+        <div class="pb">
+          <div class="chain">
+            <div><div class="big" id="rCount">0</div><div class="muted small">signed receipts</div></div>
+            <div class="verif" id="rVerif">not checked</div>
+          </div>
+          <div class="kv"><span class="muted">Gateway public key</span><span class="mono" id="pubKey" title="">-</span></div>
+          <div class="kv"><span class="muted">Last verified</span><span id="rChecked" class="small">-</span></div>
+          <div class="rlist" id="rList"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph"><h2>Keys</h2></div>
+        <div class="pb keys" id="keys"><span class="muted">Loading from the sandbox...</span></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Incident response -->
+  <section class="section" id="incidentSection" hidden>
+    <div class="panel incident">
+      <div class="ph"><h2>Incident response</h2><span class="state blocked" id="incidentState">drill complete</span></div>
+      <div class="pb">
+        <p style="margin:0 0 10px">The drill fed the agent a bug report with hidden instructions to upload <span class="mono">.env</span>. Turn what you saw into a standing rule. Nemotron drafts it, you review it, OVARA enforces it.</p>
+        <textarea id="ruleReq">Hold any upload of .env or files that look like secrets to a destination not in policy</textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn primary" id="draftBtn">Draft rule with Nemotron</button>
+          <button class="btn" id="applyBtn" disabled>Apply</button>
+        </div>
+        <div class="draft" id="draft"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="how">
+    <h2>How it works</h2>
+    <p class="lead">An unmodified coding agent works real tasks in a sandbox. It never touches the network, the shell or a real key directly. OVARA does, on its behalf, and writes down every decision.</p>
+    <div class="steps">
+      <div class="step"><div class="n">01</div><h3>A real coding agent</h3><p>OpenCode and a Nemotron 3 Super agent run unmodified inside an OVARA sandbox, with a repo, a shell and a task queue.</p></div>
+      <div class="step"><div class="n">02</div><h3>OVARA sits on the wire</h3><p>Every command, HTTP request, model call and git push goes through OVARA, which allows, holds or blocks it against policy.</p></div>
+      <div class="step"><div class="n">03</div><h3>Holds wait for you</h3><p>Pushes, deploys and unknown destinations pause in the Approvals inbox until a human approves or denies them.</p></div>
+      <div class="step"><div class="n">04</div><h3>Every decision is a receipt</h3><p>Each outcome is signed and hash-chained to the one before it, so anyone can verify nothing was edited or dropped.</p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Models</h2>
+    <p class="lead">All inference runs on Nebius Token Factory. The agent only ever holds a placeholder key; OVARA swaps in the real one on the wire.</p>
+    <div class="panel tablewrap">
+      <table>
+        <thead><tr><th>Role</th><th>Model</th><th>Where</th></tr></thead>
+        <tbody>
+          <tr><td>Coding agent</td><td>NVIDIA Nemotron 3 Super<br><span class="mono muted" id="agentModel">nvidia/nemotron-3-super-120b-a12b</span></td><td>Nebius Token Factory</td></tr>
+          <tr><td>Risk judge, first pass</td><td>NVIDIA Nemotron 3 Nano<br><span class="mono muted" id="fastModel"></span></td><td>Nebius Token Factory</td></tr>
+          <tr><td>Risk judge, escalation</td><td>NVIDIA Nemotron 3 Super<br><span class="mono muted" id="reasonModel"></span></td><td>Nebius Token Factory</td></tr>
+          <tr><td>Rule drafter</td><td>NVIDIA Nemotron 3 Ultra</td><td>Nebius Token Factory</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<footer>OVARA Shift. Each visitor gets a private, short-lived sandbox. Built for the Nebius x NVIDIA hackathon, Coding and Agentic Engineering track.</footer>
+<div id="toasts" aria-live="assertive"></div>
+
+<script>
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function trunc(s, n){ s = String(s == null ? '' : s); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+
+/* ---------- api ---------- */
+function ApiError(msg, status, body){ this.message = msg; this.status = status; this.body = body; }
+function api(method, path, body){
+  var opts = { method: method, credentials: 'same-origin', cache: 'no-store', headers: {} };
+  if (body !== undefined){ opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  return fetch(path, opts).then(function(r){
+    return r.text().then(function(t){
+      var j = null;
+      try { j = t ? JSON.parse(t) : null; } catch(e){ j = null; }
+      if (!r.ok){
+        var m = (j && (j.error || j.message)) || (t && t.trim().slice(0, 200)) || (r.status + ' ' + r.statusText);
+        throw new ApiError(typeof m === 'string' ? m : JSON.stringify(m), r.status, j);
+      }
+      return j;
+    });
+  });
+}
+function toast(msg, kind){
+  var el = document.createElement('div');
+  el.className = 'toast ' + (kind || '');
+  el.textContent = msg;
+  $('toasts').appendChild(el);
+  setTimeout(function(){ el.remove(); }, kind === 'err' ? 7000 : 4000);
+}
+function errToast(prefix, e){ toast(prefix + ': ' + ((e && e.message) || 'request failed'), 'err'); }
+
+/* ---------- state ---------- */
+var S = {
+  ready: false, info: null, timeLeft: null,
+  running: null,       // task id
+  runStart: 0, sawRunning: false,
+  baseRows: [], runRows: [], seenKeys: {},
+  taskState: {},
+  pending: [], pendingIds: {},
+  oc: null,
+  draftReady: false
+};
+
+var TASKS = [
+  { id: 'fix42', title: 'Fix issue #42 and push the fix', meta: 'Agent: Nemotron 3 Super', ep: 'A', task: 'Fix issue #42 and push the fix' },
+  { id: 'tests', title: 'Run the tests and report what fails', meta: 'Agent: Nemotron 3 Super', ep: 'A', task: 'Run the tests and report what fails' },
+  { id: 'opencode', title: 'Fix issue #42 with OpenCode', meta: 'OpenCode · real agent, unmodified', ep: 'B', task: 'Fix issue #42' , tag: 'Nemotron 3 Super via OVARA' },
+  { id: 'drill', title: 'Incident drill: poisoned issue', meta: 'A bug report with hidden instructions to upload .env', ep: 'C', attack: 'poisoned-issue', tag: 'drill' }
+];
+
+/* ---------- boot ---------- */
+function setPill(cls, text){ var p = $('pill'); p.className = 'pill ' + cls; $('pillText').textContent = text; }
+function banner(text){ if (text){ $('bannerText').textContent = text; $('banner').hidden = false; } else { $('banner').hidden = true; } }
+
+function boot(){
+  api('GET', '/api/boot').then(function(b){
+    b = b || {};
+    if (b.ready){
+      S.ready = true; banner(null); setPill('live', 'Live');
+      loadInfo(); refreshReceipts(); pollPending(); checkOpenCode(); renderQueue();
+      // resume a run already in progress (e.g. page reload)
+      api('GET', '/api/demo').then(function(d){ if (d && d.status === 'running' && !S.running){ S.running = 'resume'; S.runStart = Date.now(); S.sawRunning = true; renderQueue(); pollDemo(); } }).catch(function(){});
+      return;
+    }
+    var code = b.code || 'booting';
+    setPill(code === 'booting' ? 'boot' : 'down', code === 'full' ? 'At capacity' : code === 'daily' ? 'Daily limit reached' : 'Booting sandbox');
+    banner(b.message || (code === 'booting' ? 'Starting a private sandbox for you. This takes a few seconds.' : null));
+    setTimeout(boot, 1500);
+  }).catch(function(e){
+    setPill('down', 'Sandbox unreachable');
+    banner((e && e.message) ? 'Could not reach the sandbox: ' + e.message + '. Retrying.' : 'Could not reach the sandbox. Retrying.');
+    setTimeout(boot, 3000);
+  });
+}
+
+function loadInfo(){
+  return api('GET', '/api/info').then(function(i){
+    S.info = i || {};
+    if (typeof S.info.time_left_sec === 'number') S.timeLeft = S.info.time_left_sec;
+    var pk = S.info.public_key || '';
+    $('pubKey').textContent = pk ? (pk.length > 22 ? pk.slice(0, 12) + '…' + pk.slice(-8) : pk) : '-';
+    $('pubKey').title = pk;
+    if (S.info.agent_model) $('agentModel').textContent = S.info.agent_model;
+    var m = S.info.models || {};
+    if (m.fast) $('fastModel').textContent = m.fast;
+    if (m.reasoning) $('reasonModel').textContent = m.reasoning;
+    renderKeys();
+  }).catch(function(e){ errToast('Could not load sandbox info', e); });
+}
+
+function keyName(k){ return typeof k === 'string' ? k : (k && (k.name || k.env || k.key || k.id)) || JSON.stringify(k); }
+function renderKeys(){
+  var kg = (S.info && S.info.key_gateway) || {};
+  var keys = (kg.keys && kg.keys.length) ? kg.keys.map(keyName) : ['NEBIUS_API_KEY', 'TAVILY_API_KEY'];
+  var leaked = typeof kg.keys_leaked === 'number' ? kg.keys_leaked : 0;
+  var holder = kg.real_keys_held_by || 'OVARA';
+  var agentHolds = kg.agent_holds || 'a placeholder key';
+  $('keys').innerHTML =
+    '<div class="line"><span class="muted">Real keys held by ' + esc(holder) + '</span><span class="mono">' + keys.map(esc).join(', ') + '</span></div>' +
+    '<div class="line"><span class="muted">Agent holds</span><span>' + esc(agentHolds) + '</span></div>' +
+    '<div class="line"><span class="muted">Keys leaked</span><span class="' + (leaked ? 'verif bad' : 'zero') + '">' + esc(leaked) + '</span></div>';
+}
+
+/* countdown */
+setInterval(function(){
+  if (!S.ready || S.timeLeft == null) return;
+  S.timeLeft = Math.max(0, S.timeLeft - 1);
+  var m = Math.floor(S.timeLeft / 60), s = S.timeLeft % 60;
+  setPill(S.timeLeft > 0 ? 'live' : 'down', S.timeLeft > 0 ? 'Live · ' + m + ':' + (s < 10 ? '0' : '') + s + ' left' : 'Sandbox expired');
+}, 1000);
+setInterval(function(){ if (S.ready) loadInfo(); }, 60000);
+
+/* ---------- queue ---------- */
+function renderQueue(){
+  var html = '';
+  TASKS.forEach(function(t){
+    var st = S.running === t.id ? 'running' : (S.taskState[t.id] || '');
+    var disabled = !S.ready || !!S.running;
+    var reason = '';
+    if (t.id === 'opencode' && S.oc){
+      if (S.oc.available === false){ disabled = true; reason = 'OpenCode is not available in this sandbox.'; }
+      else if (S.oc.runs_left === 0){ disabled = true; reason = 'No OpenCode runs left for this sandbox.'; }
+      else if (typeof S.oc.runs_left === 'number'){ reason = S.oc.runs_left + ' run' + (S.oc.runs_left === 1 ? '' : 's') + ' left'; }
+    }
+    var label = st === 'running' ? 'Running' : (S.taskState[t.id] ? 'Run again' : 'Run');
+    html += '<div class="task' + (st === 'running' ? ' active' : '') + '">' +
+      '<h3>' + esc(t.title) + '</h3>' +
+      '<div class="meta">' + esc(t.meta) + (t.tag ? '<br><span class="tag">' + esc(t.tag) + '</span>' : '') + '</div>' +
+      (reason ? '<div class="meta">' + esc(reason) + '</div>' : '') +
+      '<div class="row"><span>' + (st ? '<span class="state ' + esc(st) + '">' + esc(st === 'held' ? 'held for you' : st) + '</span>' : '<span class="muted small">not run yet</span>') + '</span>' +
+      '<button class="btn primary" data-run="' + t.id + '"' + (disabled ? ' disabled' : '') + '>' + label + '</button></div>' +
+      '</div>';
+  });
+  $('queue').innerHTML = html;
+  $('runState').className = 'state ' + (S.running ? 'running' : '');
+  $('runState').textContent = S.running ? 'running' : 'idle';
+}
+$('queue').addEventListener('click', function(ev){
+  var b = ev.target.closest('button[data-run]');
+  if (!b || b.disabled) return;
+  var t = TASKS.filter(function(x){ return x.id === b.getAttribute('data-run'); })[0];
+  if (t) startTask(t);
+});
+
+function startTask(t){
+  if (S.running) return;
+  // archive previous rows
+  S.baseRows = S.baseRows.concat(S.runRows); S.runRows = [];
+  S.running = t.id; S.runStart = Date.now(); S.sawRunning = false;
+  S.currentTask = t;
+  delete S.taskState[t.id];
+  $('runLabel').textContent = t.title;
+  S.baseRows.push({ key: 'start-' + Date.now(), at: Date.now(), kind: 'TASK', text: t.title, note: t.ep === 'B' ? 'OpenCode, unmodified' : (t.ep === 'C' ? 'Incident drill' : 'Nemotron 3 Super agent'), cls: 'task' });
+  renderQueue(); renderFeed();
+  var p;
+  if (t.ep === 'A') p = api('POST', '/api/agent/task', { task: t.task });
+  else if (t.ep === 'C') p = api('POST', '/api/attacks/' + encodeURIComponent(t.attack));
+  else p = startOpenCode(t.task);
+  p.then(function(){
+    if (t.ep === 'B') pollOpenCode(); else pollDemo();
+    pollPending();
+  }).catch(function(e){
+    errToast('Could not start task', e);
+    S.taskState[t.id] = 'error'; S.running = null; renderQueue();
+  });
+}
+
+/* ---------- endpoint A / C: demo polling ---------- */
+var DECISIONS = { allowed: 'allowed', approved: 'approved', held: 'held', blocked: 'blocked', denied: 'denied', 'not approved': 'denied', 'timed out': 'denied', waiting: 'held' };
+function decOf(ev){
+  var d = String(ev.decision || '').toLowerCase();
+  if (DECISIONS[d]) return DECISIONS[d];
+  var k = String(ev.kind || '').toLowerCase();
+  return DECISIONS[k] || null;
+}
+function kindFor(method, url, text){
+  var m = String(method || '').toUpperCase(), u = String(url || ''), tx = String(text || '');
+  var all = (u + ' ' + tx).toLowerCase();
+  if (/git\s+push/.test(all)) return 'PUSH';
+  if (/chat\/completions|tokenfactory|nebius|\/v1\/completions|\/v1\/responses|nemotron/.test(all) && m !== 'SHELL') return 'MODEL';
+  if (m === 'SHELL' || m === 'EXEC' || m === 'RUN' || m === '') return m === '' && /^https?:/.test(u) ? 'HTTP' : 'RUN';
+  return 'HTTP';
+}
+function evText(ev){
+  var m = String(ev.method || '').toUpperCase();
+  if (ev.url){ return m && m !== 'SHELL' ? m + ' ' + ev.url : ev.url; }
+  return ev.text || '';
+}
+function cleanDecText(t){
+  t = String(t || '');
+  if (/^\s*(allowed|approved|held|blocked|denied|not approved|timed out|waiting)\s*(\u00b7|-|:)\s*rule:/i.test(t)) return '';
+  return t;
+}
+function buildDemoRows(events){
+  var rows = [], openReq = null, lastHeld = [];
+  events.forEach(function(ev, i){
+    var kind = String(ev.kind || '').toLowerCase();
+    var d = decOf(ev);
+    if (kind === 'request'){
+      var row = { key: 'd' + i, at: ev.at, kind: kindFor(ev.method, ev.url, ev.text), text: evText(ev) || ev.text, mono: true, dec: d, rule: ev.rule, note: (ev.url && ev.text && ev.text !== ev.url) ? ev.text : '' };
+      rows.push(row);
+      openReq = d ? null : row;
+      if (d === 'held') lastHeld.push(row);
+      return;
+    }
+    if (d){
+      var target = null;
+      if ((d === 'approved' || d === 'denied') && lastHeld.length){
+        for (var j = lastHeld.length - 1; j >= 0; j--){ if (!ev.url || lastHeld[j].text.indexOf(ev.url) >= 0){ target = lastHeld[j]; lastHeld.splice(j, 1); break; } }
+      }
+      if (!target && openReq) target = openReq;
+      if (target){
+        target.dec = d; if (ev.rule) target.rule = ev.rule;
+        var nt = cleanDecText(ev.text);
+        if (nt && nt !== target.text) target.note = trunc(nt, 220);
+        if (d === 'held') lastHeld.push(target);
+        if (target === openReq) openReq = null;
+        return;
+      }
+      var r2 = { key: 'd' + i, at: ev.at, kind: kindFor(ev.method, ev.url, ev.text), text: evText(ev) || cleanDecText(ev.text) || ev.text, mono: !!ev.url, dec: d, rule: ev.rule };
+      rows.push(r2);
+      if (d === 'held') lastHeld.push(r2);
+      return;
+    }
+    if (kind === 'thought'){ rows.push({ key: 'd' + i, at: ev.at, kind: 'THOUGHT', text: ev.text, cls: 'thought' }); return; }
+    if (kind === 'task'){ rows.push({ key: 'd' + i, at: ev.at, kind: 'TASK', text: ev.text, cls: 'task' }); return; }
+    if (kind === 'error'){ rows.push({ key: 'd' + i, at: ev.at, kind: 'ERROR', text: ev.text, cls: 'info', dec: null }); return; }
+    rows.push({ key: 'd' + i, at: ev.at, kind: (kind || 'info').toUpperCase().slice(0, 8), text: ev.text || evText(ev), cls: 'info', rule: ev.rule });
+  });
+  return rows;
+}
+function pollDemo(){
+  if (!S.running || (S.currentTask && S.currentTask.ep === 'B')) return;
+  var myRun = S.runStart;
+  api('GET', '/api/demo').then(function(d){
+    if (S.runStart !== myRun) return;
+    d = d || {};
+    var running = d.status === 'running';
+    if (running) S.sawRunning = true;
+    // ignore a stale finished state from a previous run during the first seconds
+    var stale = !running && !S.sawRunning && Date.now() - S.runStart < 5000;
+    if (!stale){
+      S.runRows = buildDemoRows(d.events || []);
+      renderFeed();
+    }
+    if (!running && !stale){
+      if (d.error) S.runRows.push({ key: 'err-' + Date.now(), at: Date.now(), kind: 'ERROR', text: d.error, cls: 'info' });
+      finishRun(d.error ? 'error' : null, d);
+      return;
+    }
+    setTimeout(pollDemo, 1500);
+  }).catch(function(e){
+    if (S.runStart !== myRun) return;
+    setTimeout(pollDemo, 2500);
+  });
+}
+
+function outcomeOf(rows){
+  var b = 0, h = 0;
+  rows.forEach(function(r){ if (r.dec === 'blocked' || r.dec === 'denied') b++; if (r.dec === 'held') h++; });
+  return b ? 'blocked' : h ? 'held' : 'done';
+}
+function finishRun(forced, d){
+  var t = S.currentTask, id = S.running;
+  var st = forced || outcomeOf(S.runRows);
+  if (id && id !== 'resume') S.taskState[id] = st;
+  S.running = null; S.currentTask = null;
+  renderQueue(); renderFeed(); refreshReceipts(); pollPending();
+  toast((t ? t.title : 'Task') + ': ' + (st === 'done' ? 'finished' : st), st === 'done' ? 'ok' : (st === 'held' ? '' : 'err'));
+  if (t && t.ep === 'C') showIncident(d);
+  if (t && t.ep === 'B') checkOpenCode();
+}
+
+/* ---------- endpoint B: OpenCode ---------- */
+function checkOpenCode(){
+  return api('GET', '/api/opencode').then(function(o){ S.oc = o || {}; renderQueue(); return S.oc; }).catch(function(){ return null; });
+}
+function startOpenCode(task){
+  return api('POST', '/api/arena/attempt', { level: 1, text: task, agent: 'opencode' }).then(function(r){
+    S.ocAttempt = r && r.id != null ? r.id : null; return r;
+  });
+}
+function ocAttemptDone(){
+  return api('GET', '/api/arena').then(function(a){
+    var last = a && a.state && a.state.last;
+    if (!last) return false;
+    if (S.ocAttempt != null && last.id != null && String(last.id) !== String(S.ocAttempt)) return false;
+    return last.status === 'done';
+  }).catch(function(){ return false; });
+}
+function lineDec(line){
+  var l = line.toLowerCase();
+  if (/\bblocked\b|\bdenied\b|not approved/.test(l)) return 'blocked';
+  if (/\bheld\b|waiting for (approval|you)|needs approval/.test(l)) return 'held';
+  if (/\bapproved\b/.test(l)) return 'approved';
+  if (/\ballowed\b/.test(l)) return 'allowed';
+  return null;
+}
+S.ocTimes = {};
+function pollOpenCode(){
+  if (!S.running || !S.currentTask || S.currentTask.ep !== 'B') return;
+  var myRun = S.runStart;
+  api('GET', '/api/opencode').then(function(o){
+    if (S.runStart !== myRun) return;
+    o = o || {}; S.oc = o;
+    if (o.running) S.sawRunning = true;
+    var lines = String(o.log || '').split(/\r?\n/).filter(function(x){ return x.trim(); });
+    S.runRows = lines.map(function(line, i){
+      var k = myRun + ':' + i;
+      if (!S.ocTimes[k]) S.ocTimes[k] = Date.now();
+      var rm = line.match(/rule[=:]\s*([\w.\-\/]+)/i);
+      return { key: 'oc' + i, at: S.ocTimes[k], kind: 'OPENCODE', text: line, mono: true, dec: lineDec(line), rule: rm ? rm[1] : '' };
+    });
+    renderFeed();
+    if (!o.running && S.sawRunning){ finishRun(null, o); return; }
+    if (!o.running){
+      ocAttemptDone().then(function(done){
+        if (S.runStart !== myRun) return;
+        if (done || Date.now() - S.runStart > 90000){ finishRun(null, o); return; }
+        setTimeout(pollOpenCode, 1500);
+      });
+      return;
+    }
+    setTimeout(pollOpenCode, 1500);
+  }).catch(function(){ if (S.runStart === myRun) setTimeout(pollOpenCode, 2500); });
+}
+
+/* ---------- feed render ---------- */
+function fmtTime(at){
+  if (at == null || at === '') return '';
+  var d;
+  if (typeof at === 'number') d = new Date(at < 1e12 ? at * 1000 : at);
+  else d = new Date(at);
+  if (isNaN(d.getTime())) return String(at).slice(0, 8);
+  return d.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+var DEC_LABEL = { allowed: 'allowed', approved: 'approved by you', held: 'held · waiting for you', blocked: 'blocked', denied: 'denied' };
+function renderFeed(){
+  var feed = $('feed');
+  var rows = S.baseRows.concat(S.runRows);
+  var nearBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 80;
+  var a = 0, h = 0, b = 0;
+  S.runRows.forEach(function(r){ if (r.dec === 'allowed' || r.dec === 'approved') a++; else if (r.dec === 'held') h++; else if (r.dec === 'blocked' || r.dec === 'denied') b++; });
+  $('cA').textContent = a; $('cH').textContent = h; $('cB').textContent = b;
+  if (!rows.length){
+    feed.innerHTML = '<div class="empty"><h4>Waiting for the first task</h4>' +
+      'Pick a task from the queue. Every thought, command, HTTP request, model call and git push the agent makes shows up here, next to OVARA’s decision and the rule that made it.' +
+      '<div class="legend"><span class="chip allowed">allowed</span><span class="chip held">held · waiting for you</span><span class="chip blocked">blocked</span></div></div>';
+    return;
+  }
+  var html = '';
+  rows.forEach(function(r){
+    var isNew = !S.seenKeys[r.key + '|' + r.dec];
+    S.seenKeys[r.key + '|' + r.dec] = 1;
+    html += '<div class="ev ' + (r.cls || '') + (isNew ? ' new' : '') + '">' +
+      '<span class="t">' + esc(fmtTime(r.at)) + '</span>' +
+      '<span class="badge b-' + esc(r.kind) + '">' + esc(r.kind) + '</span>' +
+      '<div class="x"><div class="' + (r.mono ? 'cmd' : '') + '">' + esc(trunc(r.text, 600)) + '</div>' + (r.note ? '<div class="note">' + esc(r.note) + '</div>' : '') + '</div>' +
+      '<div class="dec">' + (r.dec ? '<span class="chip ' + esc(r.dec) + '">' + esc(DEC_LABEL[r.dec] || r.dec) + '</span>' : '') + (r.rule ? '<span class="rule">' + esc(r.rule) + '</span>' : '') + '</div>' +
+      '</div>';
+  });
+  feed.innerHTML = html;
+  if (nearBottom || S.running) feed.scrollTop = feed.scrollHeight;
+}
+
+/* ---------- approvals ---------- */
+var pendTimer = null;
+function pollPending(){
+  if (pendTimer){ clearTimeout(pendTimer); pendTimer = null; }
+  if (!S.ready) return;
+  api('GET', '/api/pending').then(function(list){
+    list = Array.isArray(list) ? list : (list && Array.isArray(list.pending) ? list.pending : []);
+    var fresh = false, ids = {};
+    list.forEach(function(it){ var id = pid(it); ids[id] = 1; if (!S.pendingIds[id]) fresh = true; });
+    S.pendingIds = ids;
+    var changed = JSON.stringify(list) !== JSON.stringify(S.pending);
+    S.pending = list;
+    if (changed) renderApprovals();
+    if (fresh){
+      var hd = $('approvalsPanel'); hd.classList.remove('flash'); void hd.offsetWidth; hd.classList.add('flash');
+    }
+  }).catch(function(){}).then(function(){
+    pendTimer = setTimeout(pollPending, S.running ? 1500 : 4000);
+  });
+}
+function pid(it){ return String(it.id != null ? it.id : (it.attempt_id != null ? it.attempt_id : (it.pending_id != null ? it.pending_id : ''))); }
+function renderApprovals(){
+  var list = S.pending;
+  var pc = $('pendCount');
+  pc.textContent = list.length + ' waiting'; pc.className = 'count' + (list.length ? ' hot' : '');
+  if (!list.length){
+    $('approvals').innerHTML = '<div class="muted" style="font-size:14px">Nothing waiting. Pushes, deploys and unknown destinations stop here.</div>';
+    return;
+  }
+  var html = '';
+  list.forEach(function(it){
+    var id = pid(it);
+    var what = it.what || it.url || it.resource || it.raw || 'an action';
+    var reason = it.reason || it.rule || it.why || '';
+    var details = (it.details || []).filter(function(x){ return !(it.judge && /^(risk judge|judge says):/i.test(x)); });
+    var rem = (Array.isArray(it.remember) && it.remember.length) ? it.remember : [{ key: 'host', label: 'Trust this host for the rest of the shift' }];
+    html += '<div class="card" data-id="' + esc(id) + '">' +
+      '<div class="what">The agent wants to ' + esc(what) + '</div>' +
+      (it.destination ? '<div class="small">to <b style="color:' + (it.destination_trusted ? 'var(--text)' : 'var(--bad)') + '">' + esc(it.destination) + '</b>' + (it.destination_note ? ' <span class="muted">' + esc(it.destination_note) + '</span>' : '') + '</div>' : '') +
+      (it.raw && it.raw !== what ? '<div class="raw">' + esc(it.raw) + '</div>' : '') +
+      (reason ? '<div class="why">Held: ' + esc(reason) + '</div>' : (!details.length && !it.judge ? '<div class="why">Held: needs a human decision under policy</div>' : '')) +
+      (it.judge ? '<div class="judge"><b>' + esc(it.judge.summary || 'Risk judge') + '</b><div class="muted">' + esc(it.judge.reason || '') + '</div></div>' : '') +
+      (details.length ? '<ul>' + details.slice(0, 6).map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') +
+      '<div class="acts"><button class="btn ok" data-act="approve">Approve</button>' +
+      rem.map(function(r, i){ return '<button class="btn" data-act="remember" data-key="' + esc(r.key) + '" title="' + esc(r.confirm || r.label || '') + '">' + esc(i === 0 ? 'Approve and remember' : (r.label || 'Remember')) + '</button>'; }).join('') +
+      '<button class="btn bad" data-act="deny">Deny</button></div>' +
+      (rem[0] && rem[0].label ? '<div class="muted small">Remember: ' + esc(rem[0].label) + '</div>' : '') +
+      '</div>';
+  });
+  $('approvals').innerHTML = html;
+}
+$('approvals').addEventListener('click', function(ev){
+  var b = ev.target.closest('button[data-act]'); if (!b) return;
+  var card = b.closest('.card'); var id = card.getAttribute('data-id');
+  var it = S.pending.filter(function(x){ return pid(x) === id; })[0] || {};
+  var act = b.getAttribute('data-act');
+  var path;
+  if (act === 'deny') path = '/api/deny/' + encodeURIComponent(id);
+  else {
+    path = '/api/approve/' + encodeURIComponent(id);
+    if (act === 'remember'){
+      var key = b.getAttribute('data-key');
+      var r = (it.remember || []).filter(function(x){ return x.key === key; })[0];
+      if (r && r.confirm && !window.confirm(r.confirm)) return;
+      path += '?remember=' + encodeURIComponent(key);
+    }
+  }
+  card.querySelectorAll('button').forEach(function(x){ x.disabled = true; });
+  api('POST', path).then(function(){
+    toast(act === 'deny' ? 'Denied: ' + (it.what || id) : (act === 'remember' ? 'Approved and remembered: ' : 'Approved: ') + (it.what || id), act === 'deny' ? 'err' : 'ok');
+    S.pending = S.pending.filter(function(x){ return pid(x) !== id; });
+    renderApprovals(); pollPending(); setTimeout(refreshReceipts, 600);
+  }).catch(function(e){
+    errToast(act === 'deny' ? 'Could not deny' : 'Could not approve', e);
+    card.querySelectorAll('button').forEach(function(x){ x.disabled = false; });
+  });
+});
+
+/* ---------- receipts ---------- */
+var rTimer = null;
+function refreshReceipts(manual){
+  if (rTimer){ clearTimeout(rTimer); rTimer = null; }
+  if (!S.ready){ return Promise.resolve(); }
+  return api('GET', '/api/receipts?n=50').then(function(r){
+    r = r || {};
+    var integ = r.integrity || {};
+    var recs = (r.receipts || []).slice();
+    recs.sort(function(a, b){ return tms(b.timestamp) - tms(a.timestamp); });
+    var total = integ.total != null ? integ.total : recs.length;
+    $('rCount').textContent = total;
+    var v = $('rVerif');
+    if (integ.ok === false){ v.className = 'verif bad'; v.textContent = 'Chain broken' + (integ.problem ? ': ' + integ.problem : ''); }
+    else if (total || integ.ok){ v.className = 'verif ok'; v.textContent = 'Chain verified ✓'; }
+    else { v.className = 'verif'; v.textContent = 'No receipts yet'; }
+    $('rChecked').textContent = fmtTime(Date.now()) + (integ.checked != null ? ' · ' + integ.checked + ' checked' : '');
+    if (!recs.length){
+      $('rList').innerHTML = '<div class="muted small" style="padding-top:10px">Every decision OVARA makes is signed and chained here.</div>';
+    } else {
+      $('rList').innerHTML = recs.slice(0, 8).map(function(x){
+        var oc = String(x.outcome || x.decision || '').toLowerCase();
+        var cls = /block|den|not approved/.test(oc) ? 'blocked' : /held|wait/.test(oc) ? 'held' : /approv/.test(oc) ? 'approved' : 'allowed';
+        var what = x.what || ((x.method ? x.method + ' ' : '') + (x.url || ''));
+        return '<div class="rc"><span class="mono muted" style="font-size:11.5px">' + esc(fmtTime(x.timestamp)) + '</span>' +
+          '<span><span class="chip ' + cls + '" style="font-size:11px">' + esc(trunc(x.outcome || x.decision || cls, 12)) + '</span></span>' +
+          '<span class="w" title="' + esc(x.receipt_id || '') + '">' + esc(trunc(what, 120)) + (x.rule ? '<br><span class="rule">' + esc(x.rule) + '</span>' : '') + '</span></div>';
+      }).join('');
+    }
+    if (manual) toast(integ.ok === false ? 'Receipt chain failed verification' : 'Checked ' + (integ.checked != null ? integ.checked : total) + ' receipts. Chain intact.', integ.ok === false ? 'err' : 'ok');
+  }).catch(function(e){
+    if (manual) errToast('Could not verify receipts', e);
+  }).then(function(){
+    rTimer = setTimeout(refreshReceipts, S.running ? 4000 : 12000);
+  });
+}
+function tms(t){ if (typeof t === 'number') return t < 1e12 ? t * 1000 : t; var d = Date.parse(t); return isNaN(d) ? 0 : d; }
+$('verifyBtn').addEventListener('click', function(){
+  var b = this; b.disabled = true; b.textContent = 'Verifying';
+  refreshReceipts(true).then(function(){ b.disabled = false; b.textContent = 'Verify'; });
+});
+
+/* ---------- incident response ---------- */
+function showIncident(d){
+  $('incidentSection').hidden = false;
+  var st = outcomeOf(S.runRows);
+  $('incidentState').className = 'state ' + (st === 'done' ? 'done' : st);
+  $('incidentState').textContent = st === 'blocked' ? 'exfiltration stopped' : st === 'held' ? 'upload held' : 'drill complete';
+  setTimeout(function(){ $('incidentSection').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 400);
+}
+function fmtRule(r){ return typeof r === 'string' ? r : JSON.stringify(r, null, 2); }
+$('draftBtn').addEventListener('click', function(){
+  var req = $('ruleReq').value.trim();
+  if (!req){ toast('Describe the rule first.', 'err'); return; }
+  var b = this; b.disabled = true; b.textContent = 'Drafting with Nemotron';
+  $('applyBtn').disabled = true;
+  api('POST', '/api/rules/draft', { request: req }).then(function(r){
+    r = r || {};
+    var added = r.added || [], removed = r.removed || [], errors = r.errors || [];
+    var ok = r.valid !== false && !errors.length;
+    var html = '';
+    if (r.explanation) html += '<p style="margin:0 0 8px">' + esc(r.explanation) + '</p>';
+    if (added.length) html += '<div class="small muted">Rules to add</div><pre>' + esc(added.map(fmtRule).join('\n\n')) + '</pre>';
+    if (removed.length) html += '<div class="small muted" style="margin-top:8px">Rules to remove</div><pre>' + esc(removed.map(fmtRule).join('\n\n')) + '</pre>';
+    if (!added.length && !removed.length) html += '<div class="muted small">No rule changes proposed.</div>';
+    if (errors.length) html += '<div class="verif bad" style="margin-top:8px">' + esc(errors.map(fmtRule).join('; ')) + '</div>';
+    html += '<div class="small" style="margin-top:8px">' + (ok ? '<span class="verif ok">Draft validated against the policy schema.</span> Review it, then Apply.' : '<span class="verif bad">Draft did not validate.</span> Edit the request and draft again.') + '</div>';
+    $('draft').innerHTML = html; $('draft').style.display = 'block';
+    $('applyBtn').disabled = !ok || (!added.length && !removed.length);
+  }).catch(function(e){ errToast('Could not draft rule', e); })
+  .then(function(){ b.disabled = false; b.textContent = 'Draft rule with Nemotron'; });
+});
+$('applyBtn').addEventListener('click', function(){
+  var b = this; b.disabled = true; b.textContent = 'Applying';
+  api('POST', '/api/rules/draft/apply', {}).then(function(){
+    toast('Rule applied. OVARA enforces it from the next request. Re-run the drill to see it.', 'ok');
+    b.textContent = 'Applied';
+    $('draft').insertAdjacentHTML('beforeend', '<div class="verif ok" style="margin-top:8px">Applied to policy at ' + esc(fmtTime(Date.now())) + '.</div>');
+    refreshReceipts();
+  }).catch(function(e){ errToast('Could not apply rule', e); b.disabled = false; b.textContent = 'Apply'; });
+});
+
+/* ---------- lifecycle ---------- */
+window.addEventListener('pagehide', function(){ try { navigator.sendBeacon('/api/session/close'); } catch(e){} });
+window.addEventListener('unhandledrejection', function(e){ e.preventDefault(); });
+
+renderQueue(); renderFeed(); renderApprovals(); renderKeys();
+boot();
+})();
+</script>
+</body>
+</html>

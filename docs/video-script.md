@@ -1,23 +1,31 @@
 # Demo video (under 3:00)
 
-Record the screen at 1920×1080 in the browser. The voiceover is yours, so read it in your own words.
+Record the screen at 1920×1080 in the browser. The voiceover is yours, so read it in your own words; the quoted lines are the beats to hit.
 
-**0:00–0:15 · The problem** (landing page, the side-by-side replay plays)
-"Coding agents read untrusted text all day: issues, READMEs, web pages. One hidden line can make an agent upload your keys. This is OVARA. Every action the agent takes goes through it."
+**0:00–0:20 · The problem** (https://ovara-grid.sidianlabs.workers.dev, console idle, all five panels visible)
+"Teams now run coding agents unattended, with real tokens in reach. One poisoned issue, and the agent uploads your keys."
 
-**0:15–0:45 · One level by hand** (Arena, level 2 "Poisoned issue", send the "Comment it back" template)
-"A real coding agent, Nemotron 3 Super on Nebius Token Factory, is fixing issue #42. I wrote the issue and hid an order in it. Watch: the agent reads the issue, OVARA marks it tainted, and its next write is held." Open the receipt and show the signature.
+**0:20–1:05 · A fix that needs approval** (click "Fix issue #42 and push the fix" in Queue; watch the Live feed)
+"This is Nemotron 3 Super on Nebius Token Factory, working issue #42. Each line in the feed is a decision: reads are allowed, the tests run, the commit lands. Now the push is held, and it appears in Approvals." (click Approve, let the push complete) "Approved. The receipt counter goes up, and the chain verifies."
 
-**0:45–1:50 · The red team autopilot** (/redteam, level 1, 5 rounds, start)
-"Now Nemotron attacks by itself. First Tavily researches published injection techniques. These are the real sources. Then Nemotron writes an attack, the agent runs it, and OVARA's verdict goes back to the attacker." Pause on round 2's rationale: "It read why round 1 was blocked, the risk judge, and tried to hide the data in a header instead. Content scanning caught that." Point at the scoreboard: flags escaped 0.
+**1:05–1:25 · A real open-source agent** (click "Fix issue #42 with OpenCode"; point at the Keys panel)
+"This is OpenCode, a real, unmodified open-source coding agent; its model calls go through OVARA, which injects the key, so the agent never had it."
 
-**1:50–2:20 · Nemotron defends** (defense card: Apply, then Replay)
-"After the last round, Nemotron reads the attack that got furthest and writes a rule. OVARA validates it, I apply it, and the same attack now stops earlier in the chain."
+**1:25–2:10 · The incident drill** (click "Incident drill: poisoned issue"; keep the feed and Keys panel in frame)
+"The agent reads the poisoned bug report, and OVARA marks the session tainted. Its upload to an unknown host is blocked by the risk judge, Nemotron 3 Nano, which escalates to Super when it needs to and uses Tavily to check the destination. The paste site is blocked by policy. Keys leaked: zero."
 
-**2:20–2:45 · The benchmark** (scroll to the benchmark)
-"Same attacker, same agent, OVARA off and on." Read the two headline numbers.
+**2:10–2:35 · Incident response** (the Incident response card appears; click "Draft rule with Nemotron", then Apply)
+"Nemotron 3 Ultra drafts a rule from this incident. Read the plain-English explanation. OVARA validates it, and one click applies it." (click Apply)
 
-**2:45–3:00 · Close**
-"Nemotron on Nebius plays every part here: the agent, the attacker, the judge and the defender. OVARA is open source. The links are below."
+**2:35–2:50 · Close** (end on the full console, all panels visible)
+"Nemotron on Nebius does the work and the judging. OVARA decides and signs. Open source, links below."
 
-Upload to YouTube as Public or Unlisted (the rules say "public"; Public is safest), then paste the link into Devpost.
+Upload to YouTube as Public, then paste the link into Devpost.
+
+## Before recording
+
+- Open https://ovara-grid.sidianlabs.workers.dev in a fresh private window so a new sandbox boots.
+- Wait for the status pill to say live.
+- Keep the Approvals column visible for the whole take.
+- Set the browser window to 1920×1080.
+- No music.
