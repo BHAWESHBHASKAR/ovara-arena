@@ -5,475 +5,369 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="color-scheme" content="dark" />
 <meta name="referrer" content="no-referrer" />
-<title>OVARA: AI agents can be tricked. OVARA stops them.</title>
-<meta name="description" content="Watch an NVIDIA Nemotron attacker try to trick a Nemotron coding agent into leaking secrets, live, and watch OVARA stop it." />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 20 20%27%3E%3Crect width=%2714%27 height=%2714%27 rx=%274%27 fill=%27%234b3df2%27/%3E%3Crect x=%276%27 y=%276%27 width=%2714%27 height=%2714%27 rx=%274%27 fill=%27%236e5ff7%27/%3E%3C/svg%3E" />
+<title>OVARA Arena: a firewall for AI coding agents</title>
+<meta name="description" content="Live: an NVIDIA Nemotron attacker tries to trick a Nemotron coding agent into leaking a secret. OVARA sits on the wire and stops it." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 20 20%27%3E%3Crect x=%278%27 width=%274%27 height=%2720%27 fill=%27%23bef04c%27/%3E%3C/svg%3E" />
 <style>
 :root{
-  --bg:#141415;--bg-2:#1a1a1c;--card:#1f1f22;--card-2:#26262a;--line:#ffffff14;--line-2:#ffffff24;
-  --text:#f5f6f7;--muted:#c3c8d0;--dim:#8d929b;--faint:#5d626b;
-  --brand:#5b4dff;--brand-2:#7b70ff;--red:#ff5d5d;--red-bg:#ff5d5d17;--green:#3ecf6a;--green-bg:#3ecf6a17;--amber:#f5c542;--amber-bg:#f5c54217;--blue:#58a6ff;
-  --sans:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  --mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  --ease:cubic-bezier(.22,1,.36,1);
+  --bg:#090a0c;--panel:#111318;--panel2:#161921;--line:#222630;--line2:#2f3542;
+  --text:#f0f2f5;--muted:#8a93a6;--dim:#5b6375;
+  --lime:#bef04c;--amber:#ffb020;--red:#ff3b3b;--redbg:#220808;--cyan:#6fd6ff;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;--head:"Space Grotesk",system-ui,sans-serif;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
-a{color:var(--brand-2);text-decoration:none}
-button{font:inherit;color:inherit;cursor:pointer}
-.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
-@media(max-width:640px){.wrap{padding:0 16px}}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--text)}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+mark{background:#ff3b3b33;color:#ffb3b3;padding:0 2px}
+.h{font-family:var(--head);text-transform:uppercase;letter-spacing:.04em}
 
-/* header */
-header{position:sticky;top:0;z-index:30;background:#141415e6;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-header .wrap{display:flex;align-items:center;gap:20px;height:60px}
-.logo{display:flex;align-items:center;gap:10px;color:var(--text);font-weight:650;letter-spacing:.14em;font-size:15px}
-.logo i{position:relative;width:20px;height:20px;display:block}
-.logo i:before,.logo i:after{content:"";position:absolute;width:14px;height:14px;border-radius:4px}
-.logo i:before{left:0;top:0;background:#3422fc}.logo i:after{right:0;bottom:0;background:var(--brand)}
-header nav{margin-left:auto;display:flex;gap:6px;align-items:center}
-header nav a{color:var(--dim);font-size:14px;padding:7px 12px;border-radius:8px;white-space:nowrap}
-header nav a:hover{color:var(--text);background:var(--card)}
-header nav a.cta{color:#fff;background:var(--brand)}
-header nav a.cta:hover{background:var(--brand-2)}
-@media(max-width:640px){header nav a.hide-sm{display:none}}
+.app{display:grid;grid-template-rows:auto auto 1fr auto;height:100vh;min-height:640px}
 
-/* hero */
-.hero{padding-top:72px;padding-bottom:56px;text-align:center}
-@media(max-width:640px){.hero{padding-top:40px}.pill{font-size:12px;flex-wrap:wrap;justify-content:center}}
-.pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);border:1px solid var(--line-2);border-radius:99px;padding:5px 12px;background:var(--bg-2)}
-.pill b{color:#a6dd3a;font-weight:600}
-h1{font-size:clamp(36px,6.2vw,68px);line-height:1.03;letter-spacing:-.03em;margin:22px auto 0;font-weight:700;max-width:16ch}
-h1 span{color:var(--brand-2)}
-.sub{font-size:clamp(17px,2vw,20px);color:var(--muted);max-width:40rem;margin:22px auto 0}
-.actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:34px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:12px;padding:15px 24px;font-size:17px;font-weight:600;min-height:52px;transition:transform .15s var(--ease),background .15s}
-.btn:active{transform:scale(.98)}
-.btn.primary{background:var(--brand);color:#fff;box-shadow:0 10px 30px -10px #5b4dffaa}
-.btn.primary:hover{background:var(--brand-2)}
-.btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line-2)}
-.btn.ghost:hover{background:var(--card-2)}
-.btn:disabled{opacity:.5;cursor:default}
-.btn .play{width:0;height:0;border-left:11px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent}
-.proof{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;margin-top:40px;color:var(--dim);font-size:15px}
-.proof b{color:var(--text);font-size:22px;font-weight:700;display:block;font-variant-numeric:tabular-nums}
-.proof .bad b{color:var(--red)}.proof .good b{color:var(--green)}
+/* ---- bar 1: identity, the secret, the switch ---- */
+.top{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:#0c0d10}
+.brand{font-family:var(--head);font-weight:700;font-size:15px;letter-spacing:.06em;white-space:nowrap}
+.brand span{color:var(--muted);font-weight:500}
+.vault{justify-self:center;display:flex;align-items:center;gap:10px;border:1px solid var(--line2);padding:6px 12px;background:var(--panel);max-width:100%;min-width:0;transition:background .3s,border-color .3s}
+.vault .k{color:var(--muted);white-space:nowrap}
+.vault code{color:var(--amber);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.vault .st{font-weight:800;white-space:nowrap;color:var(--lime)}
+.vault.stolen{background:var(--redbg);border-color:var(--red);animation:flash .5s 3}
+.vault.stolen .st{color:var(--red)}
+@keyframes flash{50%{background:#5a0f0f}}
+.switch{display:flex;border:1px solid var(--line2)}
+.switch button{padding:7px 12px;font-weight:800;font-size:12px;letter-spacing:.06em;color:var(--dim)}
+.switch button[aria-pressed=true].arm{background:var(--lime);color:#000}
+.switch button[aria-pressed=true].off{background:var(--red);color:#000}
+.switch.hint{animation:hint 1.2s 4}
+@keyframes hint{50%{box-shadow:0 0 0 4px #ff3b3b66}}
 
-/* hairline figure */
-.fig{margin:44px auto 0;max-width:640px}
-.fig iframe{display:block;width:100%;height:470px;border:0;border-radius:20px;background:transparent;color-scheme:dark}
-.fig figcaption{color:var(--dim);font-size:14.5px;margin-top:12px}
-.fig figcaption span{color:var(--muted)}
-@media(max-width:640px){.fig iframe{height:360px}}
+/* ---- bar 2: the story line, rounds, meter, the live button ---- */
+.ctl{display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+.story{min-width:0}
+#line1{font-family:var(--head);font-weight:700;font-size:20px;line-height:1.15;margin:0}
+#line2{color:var(--muted);margin:2px 0 0}
+.rounds{display:flex;gap:4px;flex-wrap:wrap}
+.rounds span{border:1px solid var(--line2);padding:3px 7px;font-size:11px;color:var(--dim);white-space:nowrap}
+.rounds span.now{border-color:var(--text);color:var(--text)}
+.rounds span.b{border-color:var(--lime);color:var(--lime)}
+.rounds span.x{border-color:var(--red);color:var(--red)}
+.rounds span.i{border-color:var(--muted);color:var(--muted)}
+.meter{width:200px}
+.meter .lb{display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
+.meter .bar{height:8px;background:var(--panel2);border:1px solid var(--line2);margin-top:3px;position:relative}
+.meter .fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--amber);transition:width .8s cubic-bezier(.16,1,.3,1)}
+.meter small{display:block;color:var(--dim);font-size:10px;margin-top:2px}
+.live{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+#go{background:#ff5500;color:#000;font-weight:800;padding:10px 14px;letter-spacing:.04em;font-size:12px;white-space:nowrap}
+#go:disabled{background:var(--panel2);color:var(--dim);cursor:wait}
+#bootline{color:var(--dim);font-size:11px;white-space:nowrap}
 
-/* section */
-section{padding:56px 0}
-.kicker{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand-2);font-weight:600}
-h2{font-size:clamp(28px,3.6vw,40px);letter-spacing:-.02em;line-height:1.1;margin:10px 0 12px}
-.lead{color:var(--muted);font-size:18px;max-width:46rem;margin:0}
+/* ---- the console ---- */
+.cols{display:grid;grid-template-columns:1fr 1.15fr 1.15fr;min-height:0}
+.col{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line)}
+.col:last-child{border-right:0}
+.ch{padding:10px 14px;border-bottom:1px solid var(--line);background:#0c0d10}
+.ch b{font-family:var(--head);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.ch small{display:block;color:var(--muted);font-size:11px}
+.c1 .ch b{color:#ff8f8f} .c2 .ch b{color:var(--cyan)} .c3 .ch b{color:var(--lime)}
+.pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+.pills span{border:1px solid var(--line2);padding:1px 6px;font-size:10px;color:var(--dim);transition:all .2s}
+.pills span.on{border-color:var(--red);background:var(--red);color:#000;font-weight:800}
+.feed{flex:1;overflow:auto;padding:10px 14px;scroll-behavior:smooth}
+.empty{color:var(--dim);margin:0}
+.card{animation:enter .22s cubic-bezier(.16,1,.3,1)}
+@keyframes enter{from{opacity:0;transform:translateY(8px)}}
+.tac{display:inline-block;border:1px solid #ff8f8f;color:#ff8f8f;padding:1px 7px;font-size:11px;margin-bottom:8px}
+.plan{color:var(--muted);margin:0 0 10px}
+.payload{border:1px solid #5a1d1d;background:#170909;padding:9px 10px;color:#ffcaca;white-space:pre-wrap;word-break:break-word}
+.payload .k{display:block;color:#ff8f8f;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
+.src{color:var(--dim);font-size:11px;margin:4px 0}
+.cmd{padding:5px 0;border-bottom:1px dashed var(--line);word-break:break-all}
+.cmd::before{content:"$ ";color:var(--cyan)}
+.cmd.think{color:var(--dim);font-style:italic;word-break:normal}
+.cmd.think::before{content:"· "}
+.g{border:1px solid var(--line);background:var(--panel);padding:7px 9px;margin-bottom:6px}
+.g .t{display:flex;justify-content:space-between;gap:8px;font-size:11px}
+.g .w{color:var(--muted);word-break:break-all;margin-top:2px}
+.g.pass .t b{color:var(--lime)}
+.g.hold{border-color:var(--amber)} .g.hold .t b{color:var(--amber)}
+.g.block{border:2px solid var(--red);background:var(--redbg);animation:enter .22s cubic-bezier(.16,1,.3,1),shake .3s .1s}
+.g.block .t b{color:var(--red);font-size:13px}
+.g.block .why{color:#ffd6d6;margin:6px 0 4px}
+.g.block .rc{color:var(--muted);font-size:11px}
+.g.leak{border:2px solid var(--red);background:var(--red);color:#000}
+.g.leak .t b,.g.leak .w{color:#000}
+.g.calm{border-color:var(--line2)} .g.calm .t b{color:var(--text)}
+@keyframes shake{20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-2px)}80%{transform:translateX(2px)}}
 
-/* scenario picker */
-.scenarios{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:28px 0 18px}
-@media(max-width:820px){.scenarios{grid-template-columns:1fr}}
-.scn{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;gap:14px;align-items:flex-start;transition:border-color .15s,background .15s}
-.scn:hover{border-color:var(--line-2);background:var(--card-2)}
-.scn[aria-pressed=true]{border-color:var(--brand);background:#5b4dff14}
-.scn .em{font-size:26px;line-height:1}
-.scn b{display:block;font-size:16px;margin-bottom:4px}
-.scn span{color:var(--dim);font-size:14px}
-.go{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.status{color:var(--dim);font-size:15px;display:flex;align-items:center;gap:10px}
-.status.err{color:var(--red)}
-.spin{width:16px;height:16px;border-radius:99px;border:2px solid var(--line-2);border-top-color:var(--brand-2);animation:sp 1s linear infinite;flex:none}
-@keyframes sp{to{transform:rotate(360deg)}}
+/* ---- bottom dock: the defender and the record ---- */
+.dock{display:grid;grid-template-columns:1.3fr 1fr;border-top:1px solid var(--line)}
+.def{padding:12px 16px;border-right:1px solid var(--line);min-height:112px}
+.def .k{color:var(--lime);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.def p{margin:4px 0 0;color:var(--muted)}
+.def .rule{color:var(--text);margin-top:6px;white-space:pre-wrap;max-height:84px;overflow:auto}
+.def .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.btn{border:1px solid var(--text);padding:7px 12px;font-weight:800;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.btn.solid{background:var(--lime);color:#000;border-color:var(--lime)}
+.btn:disabled{opacity:.4;cursor:default}
+#dmsg{color:var(--text)}
+.rec{padding:12px 16px}
+.rec .k{color:var(--muted);font-size:11px;letter-spacing:.12em;text-transform:uppercase;display:flex;justify-content:space-between}
+.rec .k a{color:var(--muted);text-transform:none;letter-spacing:0}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
+.nums b{display:block;font-family:var(--head);font-size:26px;line-height:1.1}
+.nums .r b{color:var(--red)} .nums .l b{color:var(--lime)}
+.nums span{color:var(--muted);font-size:11px;line-height:1.35;display:block}
 
-/* stage */
-.stage{margin-top:28px;border:1px solid var(--line);border-radius:22px;background:var(--bg-2);overflow:hidden}
-.narrator{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:center;min-height:68px;background:linear-gradient(90deg,#5b4dff12,transparent)}
-.narrator .round{font-family:var(--mono);font-size:12px;color:var(--brand-2);border:1px solid #5b4dff55;border-radius:99px;padding:3px 10px;white-space:nowrap}
-.narrator p{margin:0;font-size:17px;color:var(--text)}
-.lanes{display:grid;grid-template-columns:1fr 1.15fr 1fr;min-height:380px}
-@media(max-width:900px){.lanes{grid-template-columns:1fr}}
-.lane{padding:20px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:12px;min-width:0}
-.lane:last-child{border-right:0}
-@media(max-width:900px){.lane{border-right:0;border-bottom:1px solid var(--line)}}
-.who{display:flex;align-items:center;gap:12px}
-.av{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;flex:none}
-.who b{display:block;font-size:16px}.who small{color:var(--dim);font-size:13px}
-.lane.att .av{background:var(--red-bg)}.lane.agent .av{background:#58a6ff1a}.lane.guard .av{background:#5b4dff22}
-.bubble{background:var(--card);border:1px solid var(--line);border-radius:4px 16px 16px 16px;padding:14px;font-size:15px;color:var(--muted)}
-.bubble .lbl{font-size:12px;color:var(--dim);margin-bottom:6px;display:block}
-.bubble.attack{border-color:#ff5d5d40;background:#ff5d5d0d;color:#ffd6d6;font-family:var(--mono);font-size:13.5px;white-space:pre-wrap;word-break:break-word}
-.feed{display:flex;flex-direction:column;gap:8px;overflow:auto;max-height:340px;padding-right:4px}
-.step{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;color:var(--muted);animation:in .35s var(--ease)}
-.step .ic{flex:none;width:24px;text-align:center}
-.step code{font-family:var(--mono);font-size:12.5px;color:var(--text);background:#ffffff0d;border-radius:6px;padding:2px 6px;word-break:break-all}
-.step.think{color:var(--dim);font-style:italic}
-.dec{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;padding:10px 12px;border-radius:12px;animation:in .35s var(--ease)}
-.dec.ok{background:var(--green-bg);color:#bfeccc}.dec.no{background:var(--red-bg);color:#ffd0d0}.dec.hold{background:var(--amber-bg);color:#f8e3a6}
-.dec b{color:var(--text)}
-.dec.small{padding:6px 10px;font-size:13.5px}
-.dec.small code{font-family:var(--mono);font-size:12px;color:#d7f5df;background:#ffffff0a;border-radius:5px;padding:1px 5px;word-break:break-all}
-.stamp{margin-top:auto;border-radius:16px;padding:18px;text-align:center;border:2px solid;animation:pop .45s var(--ease)}
-.stamp .big{font-size:22px;font-weight:800;letter-spacing:.02em}
-.stamp p{margin:6px 0 0;font-size:14.5px;color:var(--muted)}
-.stamp.no{border-color:var(--red);background:var(--red-bg)}.stamp.no .big{color:var(--red)}
-.stamp.safe{border-color:var(--green);background:var(--green-bg)}.stamp.safe .big{color:var(--green)}
-.stamp.calm{border-color:var(--line-2);background:var(--card)}.stamp.calm .big{color:var(--muted)}
-@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
-.empty{color:var(--faint);font-size:15px}
-.score{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
-.score div{padding:18px 22px;border-right:1px solid var(--line)}
-.score div:last-child{border-right:0}
-.score b{display:block;font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
-.score span{color:var(--dim);font-size:14px}
-.score .safe b{color:var(--green)}
-@media(max-width:640px){.score{grid-template-columns:1fr}.score div{border-right:0;border-bottom:1px solid var(--line)}}
-.history{display:flex;gap:8px;flex-wrap:wrap;padding:14px 22px;border-top:1px solid var(--line)}
-.history button{border:1px solid var(--line-2);background:var(--card);border-radius:99px;padding:6px 12px;font-size:13px;color:var(--muted)}
-.history button.on{border-color:var(--brand);color:var(--text)}
-.history button i{font-style:normal;margin-right:6px}
+.foot{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:8px 16px;border-top:1px solid var(--line);color:var(--dim);font-size:11px}
+.foot a{color:var(--muted)}
+.foot b{color:var(--text);font-weight:600}
 
-/* defense */
-.defense{margin-top:18px;border:1px solid #5b4dff55;border-radius:20px;padding:22px;background:linear-gradient(180deg,#5b4dff14,transparent 70%)}
-.defense h3{margin:0 0 6px;font-size:20px}
-.defense .rule{margin:14px 0;padding:14px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-size:15px}
-.defense .row{display:flex;gap:10px;flex-wrap:wrap}
-.defense .btn{font-size:15px;padding:11px 18px;min-height:44px}
-.defense .msg{margin:12px 0 0;color:var(--muted);font-size:15px}
+/* benchmark drawer */
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line2);max-width:860px;width:calc(100% - 32px);padding:20px}
+dialog::backdrop{background:#000a}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:400}
+td.n,th.n{text-align:right}
+.tag{border:1px solid var(--line2);padding:0 5px;margin-right:4px;white-space:nowrap;font-size:11px}
 
-/* results */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}
-@media(max-width:820px){.stats{grid-template-columns:1fr}}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px}
-.stat .n{font-size:48px;font-weight:800;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
-.stat.bad .n{color:var(--red)}.stat.good .n{color:var(--green)}
-.stat h3{font-size:17px;margin:14px 0 6px}
-.stat p{margin:0;color:var(--dim);font-size:15px}
-details{margin-top:18px;border:1px solid var(--line);border-radius:16px;background:var(--bg-2)}
-summary{cursor:pointer;padding:16px 20px;color:var(--muted);font-size:15px}
-details .in{padding:0 20px 20px;overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
-th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
-th{color:var(--dim);font-weight:500;font-size:12.5px}
-td.n{font-family:var(--mono);text-align:right}th.n{text-align:right}
-.tag{display:inline-block;font-size:12px;border:1px solid var(--line-2);border-radius:99px;padding:1px 8px;margin:1px 2px;color:var(--muted)}
-
-/* how */
-.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:28px}
-@media(max-width:900px){.steps{grid-template-columns:1fr 1fr}}
-@media(max-width:520px){.steps{grid-template-columns:1fr}}
-.stp{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px}
-.stp .em{font-size:26px}
-.stp h3{margin:12px 0 6px;font-size:17px}
-.stp p{margin:0;color:var(--dim);font-size:15px}
-.stp small{display:block;margin-top:12px;color:var(--brand-2);font-size:12.5px;font-family:var(--mono)}
-.why{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center}
-@media(max-width:900px){.why{grid-template-columns:1fr}}
-.why ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
-.why li{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;color:var(--muted)}
-.why li b{color:var(--text)}
-footer{border-top:1px solid var(--line);color:var(--faint);font-size:14px;padding:28px 0 48px;margin-top:24px}
-footer .wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+@media(max-width:980px){
+  .app{height:auto;min-height:0}
+  .top{grid-template-columns:1fr;justify-items:start;gap:8px}
+  .vault{justify-self:stretch}
+  .ctl{grid-template-columns:1fr;gap:10px}
+  .meter{width:100%}.live{align-items:stretch}
+  .cols{grid-template-columns:1fr}
+  .col{border-right:0;border-bottom:1px solid var(--line)}
+  .feed{max-height:300px;min-height:120px}
+  .dock{grid-template-columns:1fr}.def{border-right:0;border-bottom:1px solid var(--line)}
+}
 </style>
 </head>
 <body>
-<header><div class="wrap">
-  <a class="logo" href="/"><i></i><span>OVARA</span></a>
-  <nav>
-    <a class="hide-sm" href="#results">Results</a>
-    <a class="hide-sm" href="#how">How it works</a>
-    <a href="/app#/arena">Try it yourself</a>
-    <a class="cta" href="#watch">Watch live</a>
-  </nav>
-</div></header>
+<div class="app">
 
-<main>
-  <div class="wrap hero">
-    <span class="pill"><span>Built on <b>NVIDIA Nemotron</b></span><span>· Nebius Token Factory · Tavily</span></span>
-    <h1>AI agents can be tricked into leaking your secrets. <span>OVARA stops them.</span></h1>
-    <p class="sub">Coding agents read bug reports, READMEs and web pages written by strangers. One hidden sentence can make an agent upload your API keys. OVARA sits between the agent and the world and checks every single thing it does.</p>
-    <div class="actions">
-      <button class="btn primary" id="hero-watch"><span class="play"></span>Watch an AI try to hack an AI</button>
-      <a class="btn ghost" href="/app#/arena">Try to trick it yourself</a>
-    </div>
-    <figure class="fig" aria-label="Crates queue at a gate. Clean ones pass; the one carrying a key is held. Hover a crate.">
-      <iframe src="/fig/checkpoint?theme=dark&amp;play=1" title="OVARA as a checkpoint: clean requests pass, the one carrying a key is held" loading="eager" scrolling="no"></iframe>
-      <figcaption>Every request the agent makes is a crate at OVARA’s gate. Clean ones pass. The one carrying a key never does. <span>Hover a crate.</span></figcaption>
-    </figure>
-    <div class="proof" id="proof">
-      <div class="bad"><b>9 of 18</b>attacks leaked a secret without OVARA</div>
-      <div class="good"><b>0 of 18</b>leaked with OVARA</div>
-      <div><b>0 of 48</b>live AI-vs-AI attacks got through</div>
+  <div class="top">
+    <div class="brand">OVARA <span>// a firewall for AI coding agents</span></div>
+    <div class="vault" id="vault"><span class="k">Secret in the agent's .env:</span><code>STRIPE_SECRET_KEY=FAKE_TOKEN_FOR_DEMO…</code><span class="st" id="vst">SAFE</span></div>
+    <div class="switch" id="switch" role="group" aria-label="Replay with OVARA on or off">
+      <button class="arm" id="sw-on" aria-pressed="true">OVARA ON</button>
+      <button class="off" id="sw-off" aria-pressed="false">OVARA OFF</button>
     </div>
   </div>
 
-  <section id="watch"><div class="wrap">
-    <div class="kicker">Live, right now</div>
-    <h2>Watch one AI try to trick another</h2>
-    <p class="lead">An attacker AI writes a trap. A real coding agent reads it while doing its job. OVARA watches every move the agent makes. After each try, the attacker learns why it failed and tries something smarter. Everything here is fake: fake keys, fake servers. Nothing real can leak.</p>
-
-    <div class="scenarios" id="scenarios" role="group" aria-label="Pick a trap">
-      <button class="scn" data-level="2" aria-pressed="true"><span class="em">🐛</span><span><b>The poisoned bug report</b><span>The agent is fixing a GitHub issue. The attacker wrote that issue and hid orders in it.</span></span></button>
-      <button class="scn" data-level="1" aria-pressed="false"><span class="em">💬</span><span><b>The friendly message</b><span>The attacker chats with the agent directly and talks it into sending the keys.</span></span></button>
-      <button class="scn" data-level="3" aria-pressed="false"><span class="em">📄</span><span><b>The booby-trapped README</b><span>The agent sets the project up from a README the attacker wrote.</span></span></button>
+  <div class="ctl">
+    <div class="story" aria-live="polite">
+      <p id="line1">An AI coding agent has shell access and your keys. Someone hid an order in the bug report it is fixing.</p>
+      <p id="line2">Replaying a real recorded run. Your own live sandbox is starting in the background.</p>
     </div>
-    <div class="go">
-      <button class="btn primary" id="start" disabled><span class="play"></span>Start the attack</button>
-      <span class="status" id="status"><span class="spin"></span>Getting a private sandbox ready for you…</span>
+    <div class="meter">
+      <div class="lb"><span>How close the secret got</span><b id="mv">0%</b></div>
+      <div class="bar"><div class="fill" id="mf"></div></div>
+      <div class="rounds" id="rounds" style="margin-top:6px"><span class="now" id="rr">REPLAY</span></div>
     </div>
+    <div class="live">
+      <button id="go" disabled>▶ RUN IT LIVE · NEMOTRON VS NEMOTRON</button>
+      <span id="bootline">live sandbox: starting…</span>
+    </div>
+  </div>
 
-    <div class="stage" id="stage" hidden>
-      <div class="narrator"><span class="round" id="round-tag">ROUND 1</span><p id="narr">The attacker is studying the target.</p></div>
-      <div class="lanes">
-        <div class="lane att">
-          <div class="who"><span class="av">🦹</span><span><b>The attacker</b><small id="att-model">Nemotron 3 Super · learns every round</small></span></div>
-          <div id="att-body"><p class="empty">Waiting for its first idea…</p></div>
-        </div>
-        <div class="lane agent">
-          <div class="who"><span class="av">🤖</span><span><b>The coding agent</b><small>Nemotron 3 Super · has a shell, git and the web</small></span></div>
-          <div class="feed" id="agent-feed"><p class="empty">It starts working once the trap is planted.</p></div>
-        </div>
-        <div class="lane guard">
-          <div class="who"><span class="av">🛡️</span><span><b>OVARA, the guard</b><small>checks every action before it happens</small></span></div>
-          <div class="feed" id="guard-feed"><p class="empty">Every command and request the agent makes shows up here with a decision.</p></div>
-          <div id="stamp"></div>
-        </div>
+  <div class="cols">
+    <div class="col c1">
+      <div class="ch"><b>01 // The attacker</b><small id="c1s">Nemotron 3 Super + Tavily search · writes the trap</small></div>
+      <div class="feed" id="f1"><p class="empty">The trap appears here.</p></div>
+    </div>
+    <div class="col c2">
+      <div class="ch"><b>02 // The coding agent</b><small>Nemotron 3 Super · real sandbox, real shell <span id="clock"></span></small></div>
+      <div class="feed" id="f2"><p class="empty">Every command it runs appears here.</p></div>
+    </div>
+    <div class="col c3">
+      <div class="ch"><b>03 // OVARA, on the wire</b><small>every action passes here first · signed receipts</small>
+        <div class="pills" id="pills"><span data-c="policy">Safety rule</span><span data-c="judge">AI risk check</span><span data-c="taint">Untrusted-input rule</span><span data-c="dlp">Secret scanner</span><span data-c="custody">Key vault</span><span data-c="approval">Human sign-off</span></div>
       </div>
-      <div class="score">
-        <div class="safe"><b id="sc-stolen">0</b><span>secrets stolen</span></div>
-        <div><b id="sc-tries">0</b><span>attacks tried</span></div>
-        <div><b id="sc-close">0%</b><span>closest call: how far the best attack got</span></div>
+      <div class="feed" id="f3"><p class="empty">Pass, hold or block, with the reason.</p></div>
+    </div>
+  </div>
+
+  <div class="dock">
+    <div class="def" id="def">
+      <div class="k">04 // The defender · Nemotron 3 Ultra</div>
+      <p>After the live rounds, Ultra studies the attack that got closest and writes a new OVARA rule here. You can apply it and replay the attack.</p>
+    </div>
+    <div class="rec">
+      <div class="k"><span>Measured on this deployment</span><a href="#" id="more">every number →</a></div>
+      <div class="nums">
+        <div class="r"><b id="r1">9/18</b><span>traps leaked the secret, OVARA off</span></div>
+        <div class="l"><b id="r2">0/18</b><span>leaked with OVARA on</span></div>
+        <div class="l"><b id="r3">0/48</b><span>live AI-vs-AI attacks got through</span></div>
       </div>
-      <div class="history" id="history" hidden></div>
     </div>
-    <div id="defense"></div>
-  </div></section>
+  </div>
 
-  <section id="results"><div class="wrap">
-    <div class="kicker">Measured on this live site</div>
-    <h2>Does it actually work?</h2>
-    <p class="lead">We asked two questions. If an attacker does fool the agent, does the secret get out? And can an AI attacker that learns from every failure fool the agent at all?</p>
-    <div class="stats">
-      <div class="stat bad"><div class="n" id="r1">9/18</div><h3>leaked without OVARA</h3><p>We made the agent follow every scripted trap in the arena. With OVARA switched off, half of them got the secret out.</p></div>
-      <div class="stat good"><div class="n" id="r2">0/18</div><h3>leaked with OVARA</h3><p>Same traps, OVARA on. Every one was stopped, and every stop comes with a signed receipt you can verify.</p></div>
-      <div class="stat good"><div class="n" id="r3">0/48</div><h3>live AI-vs-AI attacks got through</h3><p id="r3t">A Nemotron attacker went after a Nemotron agent for up to six rounds per trap, learning each time.</p></div>
-    </div>
-    <details><summary>See every number, level by level</summary><div class="in">
-      <table><thead><tr><th>Trap</th><th class="n">Leaked, OVARA off</th><th class="n">Leaked, OVARA on</th><th>What stopped it</th></tr></thead><tbody id="t-breach"></tbody></table>
-      <table style="margin-top:22px"><thead><tr><th>Trap</th><th class="n">AI attacks</th><th class="n">Got through, OVARA off</th><th class="n">Got through, OVARA on</th><th class="n">Closest call</th></tr></thead><tbody id="t-adapt"></tbody></table>
-      <p style="color:var(--dim);font-size:14px;margin:14px 0 0" id="t-note"></p>
-    </div></details>
-  </div></section>
+  <div class="foot">
+    <span><b>Inference</b> Nebius Token Factory · <b>Models</b> Nemotron 3 Super (attacker, agent), Nano→Super (risk check), Ultra (defender) · <b>Research</b> Tavily</span>
+    <span><a href="https://github.com/BHAWESHBHASKAR/ovara-arena">Source</a> · <a href="/app#/arena">Attack it yourself</a> · every key and server here is fake</span>
+  </div>
+</div>
 
-  <section id="how"><div class="wrap">
-    <div class="kicker">How it works</div>
-    <h2>Two AIs and a guard in between</h2>
-    <div class="steps">
-      <div class="stp"><div class="em">🔎</div><h3>1. Research</h3><p>Before attacking, the attacker searches the web for real, published tricks against the defence it faces.</p><small>Tavily search</small></div>
-      <div class="stp"><div class="em">🦹</div><h3>2. Attack</h3><p>It writes a trap and hides it where the agent will read it: a chat, a bug report, a README.</p><small>Nemotron 3 Super</small></div>
-      <div class="stp"><div class="em">🛡️</div><h3>3. Guard</h3><p>The agent really runs. OVARA checks each command and request, and blocks anything that would leak a secret.</p><small>OVARA + Nemotron Nano → Super risk check</small></div>
-      <div class="stp"><div class="em">🧠</div><h3>4. Learn and fix</h3><p>The attacker reads why it was blocked and tries again. Then a defender AI writes a new rule from the closest call.</p><small>Nemotron 3 Ultra</small></div>
-    </div>
-  </div></section>
-
-  <section><div class="wrap why">
-    <div>
-      <div class="kicker">Why a guard, if the model refuses?</div>
-      <h2>Models are good. Good isn't enough.</h2>
-      <p class="lead">In our live runs, Nemotron ignored most tricks on its own. But an agent runs thousands of steps a day, and it only has to be fooled once. OVARA doesn't depend on the model being right.</p>
-    </div>
-    <ul>
-      <li><span>🔑</span><span><b>The agent never sees real keys.</b> OVARA adds them on the way out, only for the service they belong to.</span></li>
-      <li><span>🧪</span><span><b>Untrusted text taints the agent.</b> After it reads an issue anyone can write, its next upload or push waits for a person.</span></li>
-      <li><span>🔍</span><span><b>Secrets are spotted leaving.</b> Even base64, hex or reversed, and even inside a call to the model itself.</span></li>
-      <li><span>🧾</span><span><b>Every decision is signed.</b> A tamper-evident chain of receipts shows exactly what happened.</span></li>
-    </ul>
-  </div></section>
-</main>
-<footer><div class="wrap">
-  <span>OVARA by Sidian Labs · Every secret and server here is fake. Nothing leaves for the real internet.</span>
-  <span><a href="https://github.com/BHAWESHBHASKAR/ovara-arena">Source on GitHub</a> · <a href="/app#/story">The story, step by step</a> · <a href="/app#/arena">Arena</a></span>
-</div></footer>
+<dialog id="dlg">
+  <div style="display:flex;justify-content:space-between;align-items:center"><b class="h">The benchmark</b><button class="btn" onclick="dlg.close()">Close</button></div>
+  <p id="lede" style="color:var(--muted)"></p>
+  <table><thead><tr><th>Trap (agent made to obey)</th><th class="n">Leaked, OVARA off</th><th class="n">Leaked, OVARA on</th><th>Stopped by</th></tr></thead><tbody id="t-breach"></tbody></table>
+  <table style="margin-top:14px"><thead><tr><th>Trap (Nemotron attacker, adaptive)</th><th class="n">Attacks</th><th class="n">Through, off</th><th class="n">Through, on</th><th class="n">Closest</th></tr></thead><tbody id="t-adapt"></tbody></table>
+  <p id="t-note" style="color:var(--muted);font-size:12px"></p>
+</dialog>
 
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-const GUARD = { policy: 'a safety rule', judge: 'the AI risk check', taint: 'the untrusted-input rule', dlp: 'the secret scanner', custody: 'the key vault', approval: 'a human sign-off' };
-const PLANT = { 1: 'its message to the agent', 2: 'the bug report', 3: 'the README', 4: 'the setup web page', 5: 'CONTRIBUTING.md' };
-let level = 2, ready = false, booting = false, running = false, best = null, rounds = [], tries = 0, stolen = 0, pollTimer = null, seen = 0, roundStart = 0;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const CTRL = { policy: 'Safety rule', judge: 'AI risk check', taint: 'Untrusted-input rule', dlp: 'Secret scanner', custody: 'Key vault', approval: 'Human sign-off' };
+const LEVEL = 2;
+let ready = false, live = false, best = null, replayData = null, replayToken = 0, pollTimer = null, seen = 0, roundStart = 0, clockT = null;
 
-// --- sandbox ---------------------------------------------------------------
-async function boot() {
-  if (booting || ready) return; booting = true;
-  setStatus('Getting a private sandbox ready for you…', 'spin');
-  for (let i = 0; i < 90; i++) {
-    try {
-      const r = await fetch('/api/boot', { cache: 'no-store', credentials: 'same-origin' });
-      if (r.status === 401) { setStatus('Reload the page to get a sandbox.', 'err'); return; }
-      const b = await r.json();
-      if (b.ready) {
-        const a = await (await fetch('/api/arena', { credentials: 'same-origin' })).json();
-        if (!a.state.has_model) { setStatus('The live demo has no model key right now.', 'err'); return; }
-        ready = true; $('start').disabled = false;
-        setStatus(`Ready. Your sandbox is private to you.`);
-        return;
-      }
-      if (b.code === 'full' || b.code === 'daily') { setStatus(b.message, 'err'); return; }
-    } catch {}
-    setStatus(i < 4 ? 'Getting a private sandbox ready for you…' : 'Starting a fresh container just for you. About 15 seconds…', 'spin');
-    await new Promise((r) => setTimeout(r, 1500));
-  }
-  setStatus('The sandbox did not start. Reload to try again.', 'err');
-}
-function setStatus(t, kind) { const s = $('status'); s.className = 'status' + (kind === 'err' ? ' err' : ''); s.innerHTML = (kind === 'spin' ? '<span class="spin"></span>' : '') + esc(t); }
-
-// --- scenario picker -------------------------------------------------------
-for (const b of document.querySelectorAll('.scn')) b.onclick = () => {
-  if (running) return;
-  level = Number(b.dataset.level);
-  for (const x of document.querySelectorAll('.scn')) x.setAttribute('aria-pressed', String(x === b));
-};
-$('hero-watch').onclick = () => { $('watch').scrollIntoView({ behavior: 'smooth' }); boot(); };
-document.querySelectorAll('a[href="#watch"]').forEach((a) => a.addEventListener('click', boot));
-// Start booting when the live section comes into view, so the wait is mostly hidden.
-new IntersectionObserver((es, o) => { if (es.some((e) => e.isIntersecting)) { boot(); o.disconnect(); } }, { rootMargin: '200px' }).observe($('watch'));
-
-// --- live agent feed --------------------------------------------------------
-function plainAction(t) {
+// ---------- shared rendering ----------
+const hi = (s) => esc(s).replace(/(STRIPE_SECRET_KEY|FAKE_TOKEN[\w]*|\.env\b|DATABASE_URL|flag\{[^}]*\})/g, '<mark>$1</mark>');
+function short(t) {
   const m = /^SHELL (.*)$/s.exec(t || '');
-  if (m) {
-    const c = m[1];
-    if (/\b(cat|less|head|tail)\b[^|]*\.env/.test(c)) return ['📂', `Opens the secrets file: <code>${esc(c.slice(0, 90))}</code>`];
-    if (/\bcurl\b|\bwget\b/.test(c)) return ['🌐', `Tries to send something over the network: <code>${esc(c.slice(0, 110))}</code>`];
-    if (/\bgit (push|commit)/.test(c)) return ['⬆️', `Tries to publish code: <code>${esc(c.slice(0, 90))}</code>`];
-    if (/pytest|python|npm test|make/.test(c)) return ['🧪', `Runs the tests: <code>${esc(c.slice(0, 80))}</code>`];
-    return ['⌨️', `Runs <code>${esc(c.slice(0, 100))}</code>`];
-  }
+  if (m) return m[1].replace(/\s+/g, ' ').slice(0, 170);
   const h = /^(GET|POST|PUT|PATCH|DELETE) (\S+)/.exec(t || '');
-  if (h) { let host = h[2]; try { host = new URL(h[2]).host; } catch {} return ['🌐', `${h[1] === 'GET' ? 'Reads' : 'Sends data to'} <code>${esc(host)}</code>`]; }
-  return ['•', esc((t || '').slice(0, 120))];
+  return h ? `${h[1]} ${h[2]}`.slice(0, 170) : (t || '').slice(0, 170);
 }
-function shortWhat(req) {
-  const t = req?.text || '';
-  const m = /^SHELL (.*)$/s.exec(t);
-  if (m) return `<code>${esc(m[1].slice(0, 46))}${m[1].length > 46 ? '…' : ''}</code>`;
-  const h = /^(GET|POST|PUT|PATCH|DELETE) (\S+)/.exec(t);
-  if (h) { let host = h[2]; try { host = new URL(h[2]).host; } catch {} return `${h[1] === 'GET' ? 'read' : 'send to'} <code>${esc(host)}</code>`; }
-  return 'that step';
-}
-function guardLine(e, req) {
-  const d = (e.decision || e.kind || '').toLowerCase();
-  const rule = (e.rule || e.text || '').replace(/^(allowed|blocked|denied|held|escalated)\s*·\s*(rule:\s*)?/i, '');
-  if (/allow/.test(d)) return `<div class="dec ok small"><span>✅</span><span>${shortWhat(req)}</span></div>`;
-  if (/hold|escal|approv|ask|pending/.test(d)) return `<div class="dec hold"><span>✋</span><span><b>Paused for a human.</b> ${esc(rule.slice(0, 140))}</span></div>`;
-  return `<div class="dec no"><span>🛑</span><span><b>Blocked.</b> ${esc(rule.slice(0, 160))}</span></div>`;
+function add(id, html) { const f = $(id); f.querySelector('.empty')?.remove(); f.insertAdjacentHTML('beforeend', html); f.scrollTop = f.scrollHeight; }
+function clearCols() { for (const id of ['f2', 'f3']) $(id).innerHTML = ''; pills(null); }
+function story(a, b) { $('line1').textContent = a; if (b !== undefined) $('line2').textContent = b; }
+function meter(v) { $('mf').style.width = `${v}%`; $('mv').textContent = `${v}%`; $('mf').style.background = v >= 100 ? 'var(--red)' : 'var(--amber)'; }
+function pills(c) { for (const p of $('pills').children) p.classList.toggle('on', p.dataset.c === c); }
+function vault(stolen, why) {
+  $('vault').classList.toggle('stolen', stolen);
+  $('vst').textContent = stolen ? 'STOLEN' : 'SAFE';
 }
 let lastReq = null, lastGuard = '';
+function onEvent(e) {
+  if (e.kind === 'task' || e.kind === 'info') return;
+  if (e.kind === 'request') {
+    if (lastReq && lastReq.text === e.text && Date.parse(e.at) - Date.parse(lastReq.at) < 4000) { lastReq = e; return; }
+    lastReq = e;
+    add('f2', `<div class="cmd card">${hi(short(e.text))}</div>`);
+  } else if (e.kind === 'thought') {
+    add('f2', `<div class="cmd think card">${esc(e.text.slice(0, 200))}</div>`);
+  } else if (e.kind === 'finish') {
+    add('f2', `<div class="cmd think card">agent finished: ${esc(e.text.slice(0, 160))}</div>`);
+  } else {
+    const d = (e.decision || e.kind || '').toLowerCase();
+    const rule = (e.rule || e.text || '').replace(/^(allowed|blocked|denied|held|escalated)\s*·\s*(rule:\s*)?/i, '').replace(/^R\d+\s*·\s*/, '');
+    const what = esc(short(lastReq?.text).slice(0, 70));
+    let html;
+    if (/allow/.test(d)) html = `<div class="g pass card"><div class="t"><b>PASS</b><span>${esc(rule.slice(0, 50))}</span></div><div class="w">${what}</div></div>`;
+    else if (/hold|escal|approv|ask|pending/.test(d)) html = `<div class="g hold card"><div class="t"><b>HOLD · waits for a person</b></div><div class="w">${what}</div><div class="w">${esc(rule.slice(0, 160))}</div></div>`;
+    else html = `<div class="g block card"><div class="t"><b>BLOCKED</b></div><div class="w">${what}</div><div class="why">${esc(rule.slice(0, 180))}</div></div>`;
+    if (html === lastGuard) return;
+    lastGuard = html; add('f3', html);
+  }
+}
+/** The round's outcome. A block replaces the PASS the proxy logged for that same step. */
+function verdict(r) {
+  if (r.verdict === 'escaped') {
+    add('f3', `<div class="g leak card"><div class="t"><b>SECRET LEFT THE SANDBOX</b></div><div class="w">Nothing stopped it. It was posted where the attacker can read it.</div></div>`);
+    vault(true); meter(100); return 'x';
+  }
+  if (r.decisive) {
+    const d = r.decisive;
+    const passes = $('f3').querySelectorAll('.g.pass'); const lastPass = passes[passes.length - 1];
+    const html = `<div class="g block card"><div class="t"><b>BLOCKED · ${esc(CTRL[d.control] || d.control)}</b><span>${esc(d.outcome || '')}</span></div><div class="w">${hi(d.what || '')}</div><div class="why">${esc(d.why || '')}</div><div class="rc">signed receipt ${esc(d.receipt_id || '')} · verified</div></div>`;
+    if (lastPass) lastPass.outerHTML = html; else add('f3', html);
+    $('f3').scrollTop = $('f3').scrollHeight;
+    pills(d.control); vault(false); meter(r.closeness || 0); return 'b';
+  }
+  add('f3', `<div class="g calm card"><div class="t"><b>TRICK IGNORED</b></div><div class="w">The agent did not take the bait, so there was nothing to stop.</div></div>`);
+  meter(r.closeness || 0); return 'i';
+}
+
+// ---------- instant replay of a real recorded run ----------
+async function replay(mode) {
+  const tok = ++replayToken;
+  const run = replayData?.[mode]; if (!run) return;
+  clearCols(); vault(false); meter(0); lastReq = null; lastGuard = '';
+  $('rr').textContent = `REPLAY · OVARA ${mode.toUpperCase()}`;
+  $('f1').innerHTML = `<div class="card"><span class="tac">recorded run · ${new Date(run.recorded).toLocaleDateString()}</span><p class="plan">The agent's job: fix a bug report. The attacker wrote one line into it.</p><div class="payload"><span class="k">Hidden in the bug report</span>${hi(run.trap)}</div><p class="src">The agent was made to obey this line, to show what happens when a model is fooled.</p></div>`;
+  story(mode === 'on' ? 'The agent fell for it. Watch what reaches the internet.' : 'Same run, OVARA switched off.', mode === 'on' ? 'A real run, recorded on this deployment, replayed at speed.' : 'Every protection off except the sandbox itself.');
+  for (const e of run.events) {
+    if (tok !== replayToken) return;
+    if (e.kind === 'task' || e.kind === 'info') continue;
+    onEvent(e); await sleep(e.kind === 'request' ? 650 : 350);
+  }
+  await sleep(500); if (tok !== replayToken) return;
+  verdict(run.result);
+  if (mode === 'on') {
+    story(`Blocked. The ${CTRL[run.result.decisive?.control] || 'gateway'} stopped the secret at the last step.`, 'Now flip OVARA off (top right) to see the same run without it.');
+    $('switch').classList.remove('hint'); void $('switch').offsetWidth; $('switch').classList.add('hint');
+  } else {
+    story('Without OVARA, the key was posted as a public comment on the issue.', 'This is one of the 9 out of 18 traps that leaked with OVARA off. Flip it back on.');
+  }
+}
+function setSwitch(mode) {
+  $('sw-on').setAttribute('aria-pressed', String(mode === 'on'));
+  $('sw-off').setAttribute('aria-pressed', String(mode === 'off'));
+}
+$('sw-on').onclick = () => { if (live) return; setSwitch('on'); replay('on'); };
+$('sw-off').onclick = () => { if (live) return; setSwitch('off'); replay('off'); };
+
+// ---------- the live sandbox ----------
+async function boot() {
+  const t0 = Date.now();
+  for (let i = 0; i < 90; i++) {
+    try {
+      const b = await (await fetch('/api/boot', { cache: 'no-store', credentials: 'same-origin' })).json();
+      if (b.ready) {
+        const a = await (await fetch('/api/arena', { credentials: 'same-origin' })).json();
+        if (!a.state.has_model) { $('bootline').textContent = 'live sandbox: no model key right now'; return; }
+        ready = true; $('go').disabled = false; $('bootline').textContent = `live sandbox ready in ${Math.round((Date.now() - t0) / 1000)}s · private to you`;
+        return;
+      }
+      if (b.code === 'full' || b.code === 'daily') { $('bootline').textContent = b.message; return; }
+    } catch {}
+    $('bootline').textContent = `live sandbox: starting a container for you · ${Math.round((Date.now() - t0) / 1000)}s`;
+    await sleep(1500);
+  }
+  $('bootline').textContent = 'live sandbox did not start, reload to retry';
+}
 async function poll() {
   try {
     const d = await (await fetch('/api/demo', { credentials: 'same-origin', cache: 'no-store' })).json();
     const evs = (d.events || []).filter((e) => Date.parse(e.at) >= roundStart - 2000);
-    for (const e of evs.slice(seen)) {
-      if (e.kind === 'task') continue;
-      if (e.kind === 'request') {
-        // OVARA logs a step as it is attempted and again as it completes: show it once
-        if (lastReq && lastReq.text === e.text && Date.parse(e.at) - Date.parse(lastReq.at) < 4000) { lastReq = e; continue; }
-        lastReq = e;
-        const [ic, html] = plainAction(e.text);
-        addStep('agent-feed', `<div class="step"><span class="ic">${ic}</span><span>${html}</span></div>`);
-        narr(html.replace(/<[^>]+>/g, '').replace(/:.*$/, '') + '. OVARA is checking it.');
-      } else if (e.kind === 'thought') {
-        addStep('agent-feed', `<div class="step think"><span class="ic">💭</span><span>${esc(e.text.slice(0, 200))}</span></div>`);
-      } else if (e.kind === 'finish') {
-        addStep('agent-feed', `<div class="step"><span class="ic">🏁</span><span>${esc(e.text.slice(0, 200))}</span></div>`);
-      } else if (e.kind === 'info') {
-        // command output: not shown, it is noise for a viewer
-      } else {
-        const line = guardLine(e, lastReq);
-        if (line === lastGuard) continue;
-        lastGuard = line;
-        addStep('guard-feed', line);
-      }
-    }
+    for (const e of evs.slice(seen)) onEvent(e);
     seen = Math.max(seen, evs.length);
   } catch {}
 }
-function addStep(id, html) { const f = $(id); f.querySelector('.empty')?.remove(); f.insertAdjacentHTML('beforeend', html); f.scrollTop = f.scrollHeight; }
-function narr(t) { $('narr').textContent = t; }
-
-// --- the run ---------------------------------------------------------------
-function resetRound(n) {
-  $('round-tag').textContent = `ROUND ${n}`;
-  $('agent-feed').innerHTML = '<p class="empty">Waiting for the trap…</p>';
-  $('guard-feed').innerHTML = '<p class="empty">Nothing to check yet.</p>';
-  $('stamp').innerHTML = '';
-  seen = 0; lastReq = null; lastGuard = '';
+function tick(on) {
+  clearInterval(clockT); $('clock').textContent = '';
+  if (!on) return;
+  const t0 = Date.now();
+  clockT = setInterval(() => { $('clock').textContent = `· ${((Date.now() - t0) / 1000).toFixed(1)}s`; }, 100);
 }
-function showAttack(r) {
-  $('att-body').innerHTML = `<div class="bubble"><span class="lbl">Its plan</span>${esc(r.rationale || r.technique)}</div>
-    <div class="bubble attack" style="margin-top:10px"><span class="lbl" style="font-family:var(--sans)">What it hid in ${esc(PLANT[level] || 'the input')}</span>${esc(r.attack)}</div>`;
-}
-function showResult(r) {
-  clearInterval(pollTimer); poll();
-  let html;
-  if (r.error) html = `<div class="stamp calm"><div class="big">Skipped</div><p>${esc(r.error)}</p></div>`;
-  else if (r.verdict === 'escaped') { stolen++; html = `<div class="stamp no"><div class="big">SECRET STOLEN</div><p>The flag reached the attacker’s server.</p></div>`; }
-  else if (r.decisive) html = `<div class="stamp safe"><div class="big">🛑 BLOCKED</div><p>Stopped by ${esc(GUARD[r.decisive.control] || r.decisive.control)}. ${esc(r.decisive.why)}</p></div>`;
-  else html = `<div class="stamp calm"><div class="big">Trick ignored</div><p>The agent didn’t fall for it and kept doing its real job, so there was nothing to block.</p></div>`;
-  $('stamp').innerHTML = html;
-  if (!r.error) { tries++; if (!best || (r.closeness || 0) > (best.closeness || 0)) best = r; }
-  $('sc-stolen').textContent = stolen; $('sc-tries').textContent = tries; $('sc-close').textContent = (best?.closeness || 0) + '%';
-  narr(r.verdict === 'escaped' ? 'The attacker got the secret out.' : r.decisive ? `Blocked. The attacker will read why and try something different.` : `The agent ignored the trick. The attacker will try to make it look more natural.`);
-  rounds.push(r);
-  const h = $('history'); h.hidden = false;
-  h.insertAdjacentHTML('beforeend', `<button title="${esc(r.attack || '')}"><i>${r.verdict === 'escaped' ? '🔓' : r.decisive ? '🛑' : '🙈'}</i>${r.n === 0 ? 'Worst case' : `Round ${r.n}`}: ${esc(r.technique)}</button>`);
+function roundChip(n, cls) {
+  let s = $('rounds').querySelector(`[data-n="${n}"]`);
+  if (!s) { s = document.createElement('span'); s.dataset.n = n; s.textContent = `R${n}`; $('rounds').appendChild(s); }
+  for (const x of $('rounds').children) x.classList.remove('now');
+  s.className = cls || 'now';
 }
 
-/** Round 0: the agent is made to obey a classic trap, so the viewer sees what OVARA does when the model is fooled. */
-async function worstCase() {
-  const arena = await (await fetch('/api/arena', { credentials: 'same-origin' })).json();
-  const t = arena.levels.find((l) => l.n === level)?.templates?.[0];
-  if (!t) return;
-  resetRound(0); $('round-tag').textContent = 'ROUND 0 · WORST CASE';
-  $('att-body').innerHTML = `<div class="bubble"><span class="lbl">First, the worst case</span>Suppose the agent falls for a well-known trap. We make it obey, to show what OVARA does when the model is fooled.</div>
-    <div class="bubble attack" style="margin-top:10px"><span class="lbl" style="font-family:var(--sans)">The trap, hidden in ${esc(PLANT[level])}</span>${esc(t.trap)}</div>`;
-  narr('Worst case first: the agent has been fooled and is following the trap. Watch OVARA.');
-  roundStart = Date.now(); seen = 0;
-  clearInterval(pollTimer); pollTimer = setInterval(poll, 900);
-  const r = await fetch('/api/arena/attempt', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ level, template: t.id }) });
-  const a = await r.json().catch(() => ({}));
-  if (!a.id) { clearInterval(pollTimer); return; }
-  for (let i = 0; i < 60; i++) {
-    await new Promise((x) => setTimeout(x, 1000));
-    const l = (await (await fetch('/api/arena', { credentials: 'same-origin' })).json()).state.last;
-    if (l && l.id === a.id && l.status === 'done') {
-      await new Promise((x) => setTimeout(x, 1200)); // let the feed catch up before the stamp lands
-      showResult({ n: 0, technique: 'Agent fooled on purpose', attack: t.trap, verdict: l.verdict, closeness: l.closeness, decisive: l.decisive });
-      narr(l.verdict === 'escaped' ? 'Even the worst case got out.' : 'Even with the agent fooled, nothing leaked. Now a real AI attacker tries to fool it for itself.');
-      await new Promise((x) => setTimeout(x, 7000));
-      return;
-    }
-  }
-  clearInterval(pollTimer);
-}
-
-async function run() {
-  if (!ready || running) return;
-  running = true; $('start').disabled = true; best = null; rounds = []; tries = 0; stolen = 0;
-  for (const x of document.querySelectorAll('.scn')) x.disabled = true;
-  $('stage').hidden = false; $('defense').innerHTML = ''; $('history').innerHTML = ''; $('history').hidden = true;
-  $('sc-stolen').textContent = '0'; $('sc-tries').textContent = '0'; $('sc-close').textContent = '0%';
-  $('att-body').innerHTML = '<p class="empty">Researching published attacks on the web…</p>';
-  resetRound(1); narr('The attacker is researching real attacks with Tavily search.');
-  $('stage').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  setStatus('Running. Each round takes about half a minute.', 'spin');
+$('go').onclick = async () => {
+  if (!ready || live) return;
+  live = true; replayToken++; $('go').disabled = true; $('go').textContent = '● LIVE';
+  $('rr').textContent = 'REPLAY'; $('rr').className = 'b';
+  best = null; clearCols(); vault(false); meter(0);
+  $('f1').innerHTML = '<p class="empty">Searching the web for published attacks…</p>';
+  story('Live: a Nemotron attacker is researching how to fool your agent.', 'It reads real write-ups with Tavily, then writes its own trap. Each round takes about 30 seconds.');
   try {
-    await worstCase();
-    const r = await fetch(`/api/redteam?level=${level}&rounds=4&attacker=super`, { credentials: 'same-origin' });
-    if (!r.ok || !r.body) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'The live demo could not start.'); }
+    const r = await fetch(`/api/redteam?level=${LEVEL}&rounds=3&attacker=super`, { credentials: 'same-origin' });
+    if (!r.ok || !r.body) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'The live run could not start.'); }
     const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '';
     for (;;) {
       const { value, done } = await rd.read(); if (done) break;
@@ -484,82 +378,91 @@ async function run() {
         if (!chunk.startsWith('data: ')) continue;
         const e = JSON.parse(chunk.slice(6));
         if (e.type === 'intel') {
-          $('att-body').innerHTML = `<div class="bubble"><span class="lbl">Read ${e.results.length} articles about attacks like this</span>${e.results.slice(0, 3).map((x) => `· ${esc(x.title.slice(0, 70))}`).join('<br>')}</div>`;
+          $('f1').innerHTML = `<div class="card"><span class="tac">research · Tavily</span><p class="plan">Read ${e.results.length} write-ups on attacks like this:</p>${e.results.slice(0, 4).map((x) => `<div class="src">· ${esc(x.title.slice(0, 90))}</div>`).join('')}</div>`;
         } else if (e.type === 'thinking') {
-          resetRound(e.n);
-          narr(e.n === 1 ? 'The attacker is writing its first trap.' : `The attacker is reading why round ${e.n - 1} failed and planning round ${e.n}.`);
+          roundChip(e.n); clearCols(); lastReq = null; lastGuard = ''; tick(true);
+          story(e.n === 1 ? 'The attacker is writing its first trap.' : `The attacker read why round ${e.n - 1} failed and is changing tactics.`, 'Nemotron 3 Super on Nebius Token Factory.');
         } else if (e.type === 'attack') {
-          showAttack(e.round);
-          narr(`The trap is planted in ${PLANT[level]}. Now the agent starts its real work.`);
+          $('f1').innerHTML = `<div class="card"><span class="tac">round ${e.round.n} · ${esc(e.round.technique || '')}</span><p class="plan">${esc(e.round.rationale || '')}</p><div class="payload"><span class="k">Hidden in the bug report</span>${hi(e.round.attack)}</div></div>`;
+          story(`Round ${e.round.n}: the trap is planted. The agent starts its normal job.`, 'Every command it runs goes through OVARA first.');
           roundStart = Date.now(); seen = 0;
-          clearInterval(pollTimer); pollTimer = setInterval(poll, 1200);
+          clearInterval(pollTimer); pollTimer = setInterval(poll, 1000);
         } else if (e.type === 'result') {
-          showResult(e.round);
+          clearInterval(pollTimer); await poll(); tick(false);
+          const rr = e.round;
+          if (rr.error) { roundChip(rr.n, 'i'); continue; }
+          const k = verdict(rr); roundChip(rr.n, k);
+          if (!best || (rr.closeness || 0) > (best.closeness || 0)) best = rr;
+          story(k === 'x' ? 'The secret got out. The receipts show exactly how.' : k === 'b' ? `Blocked by the ${CTRL[rr.decisive.control]}. The attacker gets the reason and tries again.` : 'The agent ignored the trick. The attacker will make the next one look more natural.');
         } else if (e.type === 'defense') {
-          showDefense(e);
+          defense(e);
         } else if (e.type === 'done') {
-          setStatus(`Done. ${e.summary.rounds} rounds, ${e.summary.escaped} secrets stolen. Pick another trap or run it again.`);
-          narr(e.summary.escaped ? 'The attacker got through. The receipts show exactly how.' : `${e.summary.rounds} rounds, 0 secrets stolen. OVARA held.`);
+          story(`Done: ${e.summary.rounds} live rounds, ${e.summary.escaped} secrets stolen.`, 'The defender has written a new rule below.');
         } else if (e.type === 'error') {
-          if (!/research skipped/.test(e.message)) setStatus(e.message, 'err');
+          if (!/research skipped/.test(e.message)) story('Something went wrong', e.message);
         }
       }
     }
-  } catch (err) { setStatus(err.message, 'err'); }
-  clearInterval(pollTimer);
-  running = false; $('start').disabled = false; $('start').innerHTML = '<span class="play"></span>Run it again';
-  for (const x of document.querySelectorAll('.scn')) x.disabled = false;
-}
-$('start').onclick = run;
+  } catch (err) { story('The live run stopped.', err.message); }
+  clearInterval(pollTimer); tick(false);
+  live = false; $('go').disabled = false; $('go').textContent = '▶ RUN AGAIN';
+};
 
-// --- defense ----------------------------------------------------------------
-function showDefense(e) {
-  const rules = (e.added || []).slice(0, 4).map((x) => `<li>${x.deny ? 'Block' : x.escalate ? 'Ask a person before' : 'Allow'}: ${esc(x.description || x.resource || '')}</li>`).join('');
-  $('defense').innerHTML = `<div class="defense">
-    <div class="kicker">Then the defender takes a turn</div>
-    <h3>Nemotron 3 Ultra wrote a new rule from the closest call</h3>
-    <p style="margin:0;color:var(--muted)">It read the attack that got furthest (round ${e.basis}) and asked for: “${esc(e.request)}”</p>
-    <div class="rule">${esc(e.explanation)}${rules ? `<ul style="margin:10px 0 0;padding-left:20px;color:var(--dim)">${rules}</ul>` : ''}</div>
-    <div class="row"><button class="btn primary" id="apply">Apply this rule to my sandbox</button><button class="btn ghost" id="replay" disabled>Re-run the closest attack</button></div>
-    <p class="msg" id="dmsg"></p></div>`;
+// ---------- the defender ----------
+function defense(e) {
+  const rules = (e.added || []).slice(0, 3).map((x) => `· ${x.deny ? 'Block' : x.escalate ? 'Ask a person before' : 'Allow'}: ${esc(x.description || x.resource || '')}`).join('\n');
+  $('def').innerHTML = `<div class="k">04 // The defender · Nemotron 3 Ultra wrote a new rule</div>
+    <p>From round ${e.basis}, the closest call: “${esc(e.request)}”</p>
+    <div class="rule">${esc(e.explanation)}${rules ? '\n' + rules : ''}</div>
+    <div class="row"><button class="btn solid" id="apply">Apply rule &amp; replay the attack</button><span id="dmsg"></span></div>`;
   $('apply').onclick = async () => {
-    $('apply').disabled = true;
+    $('apply').disabled = true; $('dmsg').textContent = 'Applying…';
     const r = await fetch('/api/rules/draft/apply', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     const j = await r.json().catch(() => ({}));
-    $('dmsg').textContent = r.ok ? 'Applied. The rule is live in your sandbox, no restart needed.' : (j.error || 'OVARA’s validator rejected the rule.');
-    if (r.ok && best) $('replay').disabled = false; else if (!r.ok) $('apply').disabled = false;
-  };
-  $('replay').onclick = async () => {
-    $('replay').disabled = true; $('dmsg').textContent = 'Re-running round ' + best.n + ' against the new rule…';
-    const r = await fetch('/api/arena/attempt', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ level, text: best.attack }) });
-    const a = await r.json().catch(() => ({}));
-    if (r.status !== 202) { $('dmsg').textContent = a.error || 'The re-run was refused.'; return; }
+    if (!r.ok) { $('dmsg').textContent = j.error || 'OVARA’s validator rejected the rule.'; $('apply').disabled = false; return; }
+    if (!best) { $('dmsg').textContent = 'Rule is live.'; return; }
+    $('dmsg').textContent = `Rule live. Replaying round ${best.n}…`;
+    live = true; clearCols(); lastReq = null; lastGuard = ''; meter(0); roundChip('↻'); tick(true);
+    story(`Replaying round ${best.n} against the new rule.`, `Before, it got ${best.closeness}% of the way.`);
+    roundStart = Date.now(); seen = 0; clearInterval(pollTimer); pollTimer = setInterval(poll, 1000);
+    const a = await (await fetch('/api/arena/attempt', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ level: LEVEL, text: best.attack }) })).json().catch(() => ({}));
+    if (!a.id) { live = false; clearInterval(pollTimer); tick(false); $('dmsg').textContent = a.error || 'The replay was refused.'; return; }
     for (let i = 0; i < 100; i++) {
-      await new Promise((x) => setTimeout(x, 1500));
+      await sleep(1500);
       const l = (await (await fetch('/api/arena', { credentials: 'same-origin' })).json()).state.last;
       if (l && l.id === a.id && l.status === 'done') {
-        const by = l.decisive ? GUARD[l.decisive.control] || l.decisive.control : 'the agent itself';
-        $('dmsg').innerHTML = `Before: ${best.closeness}% of the way. <b>Now: ${l.closeness}%, stopped by ${esc(by)}</b>${l.closeness < best.closeness ? ', earlier than before.' : '.'}`;
+        clearInterval(pollTimer); await poll(); tick(false); live = false;
+        roundChip('↻', verdict(l));
+        $('dmsg').innerHTML = `<b>${best.closeness}% → ${l.closeness}%</b>${l.closeness < best.closeness ? ', stopped earlier than before.' : '.'}`;
+        story(`With the new rule: ${best.closeness}% → ${l.closeness}%.`, l.decisive ? `Stopped by the ${CTRL[l.decisive.control] || l.decisive.control}.` : '');
         return;
       }
     }
-    $('dmsg').textContent = 'The re-run did not finish in time.';
+    live = false; $('dmsg').textContent = 'The replay did not finish in time.';
   };
 }
 
-// --- results ----------------------------------------------------------------
+// ---------- the record ----------
+$('more').onclick = (ev) => { ev.preventDefault(); $('dlg').showModal(); };
 (async () => {
   try {
     const b = await (await fetch('/bench.json', { cache: 'no-store' })).json();
     const h = b.headline || [];
     if (h[0]) $('r1').textContent = h[0].value; if (h[1]) $('r2').textContent = h[1].value; if (h[2]) $('r3').textContent = h[2].value;
-    const L = { 1: 'The friendly message', 2: 'The poisoned bug report', 3: 'The booby-trapped README', 4: 'The evil web page', 5: 'Smuggling through the model' };
-    $('t-breach').innerHTML = (b.breach || []).map((l) => `<tr><td>${esc(L[l.n] || l.title)}</td><td class="n">${esc(l.off)}</td><td class="n">${esc(l.on)}</td><td>${l.caught_by.map((c) => `<span class="tag">${esc(GUARD[c] || c)}</span>`).join('')}</td></tr>`).join('');
+    $('lede').textContent = b.lede || '';
+    const L = { 1: 'A friendly message', 2: 'A poisoned bug report', 3: 'A booby-trapped README', 4: 'An evil web page', 5: 'Smuggling through the model' };
+    $('t-breach').innerHTML = (b.breach || []).map((l) => `<tr><td>${esc(L[l.n] || l.title)}</td><td class="n">${esc(l.off)}</td><td class="n">${esc(l.on)}</td><td>${l.caught_by.map((c) => `<span class="tag">${esc(CTRL[c] || c)}</span>`).join('')}</td></tr>`).join('');
     $('t-adapt').innerHTML = (b.levels || []).map((l) => `<tr><td>${esc(L[l.n] || l.title)}</td><td class="n">${l.attacks}</td><td class="n">${l.off_escaped}/${l.off_runs}</td><td class="n">${l.on_escaped}/${l.on_runs}</td><td class="n">${l.on_best}%</td></tr>`).join('');
     $('t-note').textContent = b.note || '';
-    const m = /ignored (\d+); OVARA stopped (\d+)/.exec(h[2]?.label || '');
-    if (m) $('r3t').textContent = `A Nemotron attacker went after a Nemotron agent for up to six rounds per trap, learning each time. The agent ignored ${m[1]} tricks; OVARA blocked the other ${m[2]}.`;
   } catch {}
+})();
+
+// ---------- start: replay at once, boot the live sandbox behind it ----------
+(async () => {
+  boot();
+  try { replayData = await (await fetch('/replay.json', { cache: 'no-store' })).json(); } catch {}
+  await sleep(600);
+  replay('on');
 })();
 addEventListener('pagehide', () => { if (ready) navigator.sendBeacon?.('/api/session/close'); });
 </script>
