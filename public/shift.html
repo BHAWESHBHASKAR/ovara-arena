@@ -567,6 +567,14 @@ $('composer').addEventListener('click', function(ev){
 });
 function syncComposer(){
   var busy = !S.ready || !!S.running;
+  // The sandbox refuses policy changes while a task runs; say so instead of failing.
+  var pol = $('policyPanel');
+  if (pol){
+    var pbs = pol.querySelectorAll('button');
+    for (var q = 0; q < pbs.length; q++){ if (pbs[q].id !== 'policyApply' && pbs[q].id !== 'policyReset') pbs[q].disabled = busy; else if (busy) pbs[q].disabled = true; else if (pbs[q].id === 'policyReset') pbs[q].disabled = !(S.rules && S.rules.custom); }
+    pol.title = busy && S.running ? 'Policy changes apply between tasks. Wait for the running task to finish.' : '';
+    var note = pol.querySelector('.pb > p.meta'); if (note) note.textContent = busy && S.running ? 'A task is running. Policy changes apply between tasks.' : 'Changes take effect on the next action. Rerun a task to see the difference.';
+  }
   var bs = $('composer').querySelectorAll('button[data-custom]');
   for (var i = 0; i < bs.length; i++){
     var ocOut = bs[i].getAttribute('data-custom') === 'B' && S.oc && (S.oc.available === false || S.oc.runs_left === 0);
